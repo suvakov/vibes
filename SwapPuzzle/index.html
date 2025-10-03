@@ -120,14 +120,14 @@
       width: 100%;
       aspect-ratio: 1 / 1;
       display: grid;
-      gap: clamp(1px, 0.3vw, 4px);
+      gap: clamp(1px, 0.1vw, 1px);
       touch-action: none;
       user-select: none;
     }
 
     .tile {
       position: relative;
-      border-radius: 12px;
+      border-radius: 0px;
       overflow: hidden;
       background-size: cover;
       transition: transform 120ms ease;
@@ -155,7 +155,7 @@
       content: "";
       position: absolute;
       inset: -2px;
-      border-radius: 16px;
+      border-radius: 0px;
       pointer-events: none;
       box-shadow: 0 0 42px rgba(48, 214, 163, 0.4);
       animation: solvedGlow 780ms ease-out;
@@ -243,7 +243,7 @@
     <p id="message" class="hidden"></p>
   </main>
 
-  <script type="application/json" id="imageManifest">["cell.png","sand.png","chicken.png","img.png"]</script>
+  <script type="application/json" id="imageManifest">["code.png","lab.png","cell.png","chicken.png","img.png"]</script>
 
   <script>
     (function () {
