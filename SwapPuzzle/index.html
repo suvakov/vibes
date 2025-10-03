@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Column & Row Swap Puzzle</title>
+  <style>
+    :root {
+      color-scheme: light dark;
+      font-family: "Segoe UI", -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: radial-gradient(circle, #1f1f2f, #111119 65%);
+      color: #f3f3f5;
+    }
+
+    #app {
+      width: min(92vmin, 720px);
+      display: flex;
+      flex-direction: column;
+      gap: 1.2rem;
+      padding: 1.2rem;
+      background: rgba(25, 29, 40, 0.7);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 16px;
+      box-shadow: 0 20px 45px rgba(0, 0, 0, 0.35);
+      backdrop-filter: blur(10px);
+    }
+
+    header {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.8rem;
+    }
+
+    header h1 {
+      font-size: clamp(1.35rem, 2.5vw, 1.65rem);
+      font-weight: 600;
+      margin: 0;
+    }
+
+    #controls {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.6rem;
+      font-size: 0.95rem;
+    }
+
+    #levelLabel {
+      font-weight: 600;
+      letter-spacing: 0.02em;
+    }
+
+    #controlButtons {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    button {
+      padding: 0.45rem 0.9rem;
+      border-radius: 6px;
+      border: none;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      background: #4a8ef7;
+      color: white;
+      transition: transform 120ms ease, background 120ms ease;
+    }
+
+    button:hover,
+    button:focus-visible {
+      background: #377df0;
+      transform: translateY(-1px);
+      outline: none;
+    }
+
+    button:active {
+      transform: translateY(1px);
+    }
+
+    .is-hidden {
+      display: none !important;
+    }
+
+    #nextLevelButton {
+      background: #11c46a;
+      color: #041c0d;
+    }
+
+    #nextLevelButton:hover,
+    #nextLevelButton:focus-visible {
+      background: #0daf5d;
+    }
+
+    #startAgainButton {
+      background: #f26b6b;
+      color: #190404;
+    }
+
+    #startAgainButton:hover,
+    #startAgainButton:focus-visible {
+      background: #dc5656;
+    }
+
+    #grid {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 1 / 1;
+      display: grid;
+      gap: clamp(1px, 0.3vw, 4px);
+      touch-action: none;
+      user-select: none;
+    }
+
+    .tile {
+      position: relative;
+      border-radius: 12px;
+      overflow: hidden;
+      background-size: cover;
+      transition: transform 120ms ease;
+      box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+    }
+
+    .tile::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(145deg, rgba(255, 255, 255, 0.08), rgba(0, 0, 0, 0.25));
+      mix-blend-mode: overlay;
+      pointer-events: none;
+    }
+
+    #grid.solved .tile {
+      animation: solvedPop 620ms ease-in-out;
+    }
+
+    #grid.solved .tile:nth-child(even) {
+      animation-delay: 35ms;
+    }
+
+    #grid.solved::after {
+      content: "";
+      position: absolute;
+      inset: -2px;
+      border-radius: 16px;
+      pointer-events: none;
+      box-shadow: 0 0 42px rgba(48, 214, 163, 0.4);
+      animation: solvedGlow 780ms ease-out;
+    }
+
+    @keyframes solvedPop {
+      0% {
+        transform: scale(1);
+      }
+
+      45% {
+        transform: scale(1.05);
+      }
+
+      100% {
+        transform: scale(1);
+      }
+    }
+
+    @keyframes solvedGlow {
+      0% {
+        opacity: 0;
+      }
+
+      40% {
+        opacity: 1;
+      }
+
+      100% {
+        opacity: 0.3;
+      }
+    }
+
+    #message {
+      min-height: 1.2rem;
+      text-align: center;
+      font-size: 0.95rem;
+      font-weight: 500;
+      color: #7fe279;
+    }
+
+    #message.hidden {
+      visibility: hidden;
+      opacity: 0;
+    }
+
+    @media (max-width: 520px) {
+      #app {
+        padding: 1rem;
+      }
+
+      header {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+
+      #controls {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.4rem;
+      }
+
+      #controlButtons {
+        width: 100%;
+        justify-content: flex-start;
+        flex-wrap: wrap;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <main id="app">
+    <header>
+      <h1>Column & Row Swap Puzzle</h1>
+      <div id="controls">
+        <span id="levelLabel">Level 1 · Grid 2×2</span>
+        <div id="controlButtons">
+          <button id="startAgainButton" type="button">Start Again</button>
+          <button id="nextLevelButton" type="button" class="is-hidden">Next Level</button>
+        </div>
+      </div>
+    </header>
+    <section id="grid" aria-label="Puzzle board"></section>
+    <p id="message" class="hidden"></p>
+  </main>
+
+  <script type="application/json" id="imageManifest">["cell.png","sand.png","chicken.png","img.png"]</script>
+
+  <script>
+    (function () {
+      const config = {
+        scrambleMoves: 60,
+        fallbackImage: 'imgs/img.png',
+        images: [],
+        maxGridSize: 12,
+      };
+
+      const state = {
+        level: 1,
+        size: 2,
+        rowOrder: [],
+        colOrder: [],
+        tiles: [],
+        pointer: null,
+        imagePath: config.fallbackImage,
+        solved: false,
+      };
+
+      const grid = document.getElementById('grid');
+      const levelLabel = document.getElementById('levelLabel');
+      const startAgainButton = document.getElementById('startAgainButton');
+      const nextLevelButton = document.getElementById('nextLevelButton');
+      const messageEl = document.getElementById('message');
+      const manifestEl = document.getElementById('imageManifest');
+
+      if (manifestEl) {
+        try {
+          const manifest = JSON.parse(manifestEl.textContent || '[]');
+          if (Array.isArray(manifest)) {
+            config.images = manifest
+              .map((entry) => String(entry).trim())
+              .filter(Boolean)
+              .map((entry) => (entry.startsWith('imgs/') ? entry : `imgs/${entry}`));
+          }
+        } catch (error) {
+          console.warn('Unable to parse image manifest', error);
+        }
+      }
+
+      nextLevelButton.addEventListener('click', () => {
+        startLevel(state.level + 1);
+      });
+
+      startAgainButton.addEventListener('click', () => {
+        const confirmed = window.confirm('Start over at Level 1?\n\nYour current progress will be lost.');
+        if (confirmed) {
+          startLevel(1);
+        }
+      });
+
+      function gridSizeForLevel(level) {
+        return Math.min(config.maxGridSize, level + 1);
+      }
+
+      function pickRandomImage(previous = null) {
+        const pool = config.images.length ? config.images : [config.fallbackImage];
+        if (pool.length <= 1) {
+          return pool[0];
+        }
+        let candidate = pool[Math.floor(Math.random() * pool.length)];
+        if (previous && pool.length > 1) {
+          let safety = 0;
+          while (candidate === previous && safety < 6) {
+            candidate = pool[Math.floor(Math.random() * pool.length)];
+            safety += 1;
+          }
+        }
+        return candidate;
+      }
+
+      function startLevel(level) {
+        state.level = level;
+        state.size = gridSizeForLevel(level);
+        state.rowOrder = range(state.size);
+        state.colOrder = range(state.size);
+        state.pointer = null;
+        state.solved = false;
+        grid.classList.remove('solved');
+
+        state.imagePath = pickRandomImage(state.imagePath);
+
+        updateLevelLabel();
+        hideMessage();
+        nextLevelButton.classList.add('is-hidden');
+        buildGrid();
+        scramble();
+        updateTiles();
+      }
+
+      function range(n) {
+        return Array.from({ length: n }, (_, index) => index);
+      }
+
+      function buildGrid() {
+        grid.innerHTML = '';
+        grid.style.gridTemplateColumns = `repeat(${state.size}, 1fr)`;
+        state.tiles = [];
+
+        const backgroundSize = `${state.size * 100}% ${state.size * 100}%`;
+
+        for (let row = 0; row < state.size; row += 1) {
+          for (let col = 0; col < state.size; col += 1) {
+            const tile = document.createElement('div');
+            tile.className = 'tile';
+            tile.dataset.row = String(row);
+            tile.dataset.col = String(col);
+            tile.style.backgroundImage = `url(${state.imagePath})`;
+            tile.style.backgroundSize = backgroundSize;
+            tile.addEventListener('pointerdown', handlePointerDown);
+            tile.addEventListener('pointermove', handlePointerMove);
+            tile.addEventListener('pointerup', handlePointerUp);
+            tile.addEventListener('pointercancel', handlePointerUp);
+            grid.appendChild(tile);
+            state.tiles.push(tile);
+          }
+        }
+      }
+
+      function scramble() {
+        const moves = Math.max(state.size * state.size * 3, config.scrambleMoves);
+        for (let i = 0; i < moves; i += 1) {
+          const swapRows = Math.random() < 0.5;
+          const a = Math.floor(Math.random() * state.size);
+          let b = Math.floor(Math.random() * state.size);
+          while (b === a) {
+            b = Math.floor(Math.random() * state.size);
+          }
+          if (swapRows) {
+            swap(state.rowOrder, a, b);
+          } else {
+            swap(state.colOrder, a, b);
+          }
+        }
+        if (isSolved()) {
+          scramble();
+        }
+      }
+
+      function updateTiles() {
+        const step = state.size > 1 ? 100 / (state.size - 1) : 0;
+        state.tiles.forEach((tile, index) => {
+          const rowIndex = Math.floor(index / state.size);
+          const colIndex = index % state.size;
+          const sourceRow = state.rowOrder[rowIndex];
+          const sourceCol = state.colOrder[colIndex];
+          const posX = `${sourceCol * step}%`;
+          const posY = `${sourceRow * step}%`;
+          tile.style.backgroundPosition = `${posX} ${posY}`;
+        });
+
+        if (!state.solved && isSolved()) {
+          handleSolved();
+        }
+      }
+
+      function swap(arr, a, b) {
+        const tmp = arr[a];
+        arr[a] = arr[b];
+        arr[b] = tmp;
+      }
+
+      function isSolved() {
+        return state.rowOrder.every((value, index) => value === index) &&
+          state.colOrder.every((value, index) => value === index);
+      }
+
+      function handleSolved() {
+        state.solved = true;
+        grid.classList.add('solved');
+        showMessage(`Level ${state.level} complete! Tap “Next Level” to keep going.`);
+        nextLevelButton.classList.remove('is-hidden');
+        if (typeof nextLevelButton.focus === 'function') {
+          try {
+            nextLevelButton.focus({ preventScroll: true });
+          } catch (error) {
+            nextLevelButton.focus();
+          }
+        }
+      }
+
+      function updateLevelLabel() {
+        levelLabel.textContent = `Level ${state.level} · Grid ${state.size}×${state.size}`;
+      }
+
+      function showMessage(text) {
+        messageEl.textContent = text;
+        messageEl.classList.remove('hidden');
+      }
+
+      function hideMessage() {
+        messageEl.textContent = '';
+        messageEl.classList.add('hidden');
+      }
+
+      function handlePointerDown(event) {
+        if (state.solved) {
+          return;
+        }
+        event.preventDefault();
+        const tile = event.currentTarget;
+        const pointerId = event.pointerId;
+        const startRow = Number(tile.dataset.row);
+        const startCol = Number(tile.dataset.col);
+
+        state.pointer = {
+          id: pointerId,
+          startX: event.clientX,
+          startY: event.clientY,
+          startRow,
+          startCol,
+          lastRow: startRow,
+          lastCol: startCol,
+          deltaX: 0,
+          deltaY: 0,
+        };
+
+        try {
+          tile.setPointerCapture(pointerId);
+        } catch (error) {
+          /* Pointer capture is best-effort; ignore failures. */
+        }
+      }
+
+      function handlePointerMove(event) {
+        if (!state.pointer || event.pointerId !== state.pointer.id || state.solved) {
+          return;
+        }
+        state.pointer.deltaX = event.clientX - state.pointer.startX;
+        state.pointer.deltaY = event.clientY - state.pointer.startY;
+
+        const targetTile = document.elementFromPoint(event.clientX, event.clientY);
+        if (targetTile && targetTile.classList && targetTile.classList.contains('tile')) {
+          state.pointer.lastRow = Number(targetTile.dataset.row);
+          state.pointer.lastCol = Number(targetTile.dataset.col);
+        }
+      }
+
+      function handlePointerUp(event) {
+        if (!state.pointer || event.pointerId !== state.pointer.id) {
+          return;
+        }
+
+        const pointer = state.pointer;
+        state.pointer = null;
+
+        try {
+          event.currentTarget.releasePointerCapture(event.pointerId);
+        } catch (error) {
+          /* Ignore release failures when capture was unavailable. */
+        }
+
+        if (state.solved) {
+          return;
+        }
+
+        const target = resolveTarget(event, pointer);
+        if (!target) {
+          return;
+        }
+
+        const horizontal = Math.abs(pointer.deltaX) >= Math.abs(pointer.deltaY);
+
+        if (horizontal) {
+          if (target.col !== pointer.startCol) {
+            swap(state.colOrder, pointer.startCol, target.col);
+            updateTiles();
+          }
+        } else if (target.row !== pointer.startRow) {
+          swap(state.rowOrder, pointer.startRow, target.row);
+          updateTiles();
+        }
+      }
+
+      function resolveTarget(event, pointer) {
+        const direct = document.elementFromPoint(event.clientX, event.clientY);
+        if (direct && direct.classList && direct.classList.contains('tile')) {
+          return {
+            row: Number(direct.dataset.row),
+            col: Number(direct.dataset.col),
+          };
+        }
+        if (pointer.lastRow != null && pointer.lastCol != null) {
+          return { row: pointer.lastRow, col: pointer.lastCol };
+        }
+        return null;
+      }
+
+      startLevel(state.level);
+    })();
+  </script>
+</body>
+
+</html>
