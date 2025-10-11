@@ -1,0 +1,76 @@
+Reflecting Ants: Event-Driven SVG Simulation
+============================================
+
+Project Overview
+----------------
+- Single-page HTML/JS application named **Reflecting Ants**.
+- Visualises an event-driven simulation of point agents (“ants”) moving at unit speed within a unit square.
+- Rendering uses SVG embedded in the page; layout is responsive and supports zooming.
+- Application structure is entirely contained in `index.html` (inline CSS and JavaScript).
+
+Key Behaviours
+--------------
+1. **Ant State**
+   - Each ant has `start` (position at last event), `startTime`, `velocity` (unit vector), and `segments` (previous straight paths).
+   - `active` flag indicates if the ant continues participating in events; deactivated ants freeze in place.
+   - Deactivation rule: compute average length of the last `m` segments; if it drops below `mind`, the ant becomes inactive.
+
+2. **Event-Driven Updates**
+   - Global time advances by jumping to the next event (segment collision, boundary collision, or ant-ant collision).
+   - Segment data is stored globally (`state.segments`) and reused as collision mirrors.
+   - For each ant we compute:
+     - Next intersection with any segment.
+     - Next boundary reflection (treated as segments added at reset).
+     - Future intersections with other ants (line intersection solves for travel distance along each ray).
+   - The earliest event is processed; positions, velocities, and segment lists are updated.
+   - Pair collisions:
+     - If arrival times are identical (within epsilon) velocities are swapped.
+     - Otherwise the late-arriving ant reflects around a normal derived from the early ant’s direction; both velocities renormalised.
+
+3. **Rendering Layers**
+   - SVG contains three layers: stored segments, current active-path guides (dashed lines), and ant markers.
+   - Boundaries draw in a neutral grey; export adds an outer rect to ensure the frame is visible.
+   - Run loop re-renders after every processed event.
+
+4. **Controls**
+   - `Step` advances a single event (disabled during Run).
+   - `Run` toggles continuous stepping.
+   - `Reset` cancels running animations and reinitialises ants using current parameters.
+   - `Symmetric` checkbox creates mirrored ants (opposite direction) for each initial ant.
+   - `mind` and `m` numeric inputs control deactivation heuristics.
+   - `Export SVG` downloads a selectable subset (active/inactive ants, segments, boundaries, current paths).
+   - Zoom with mouse wheel adjusts the SVG viewBox.
+
+5. **About Modal**
+   - Provides documentation for users; auto-opens on initial load.
+   - Modal uses fixed overlay, close button, ESC handling, and focus management.
+
+Implementation Notes
+--------------------
+- `state` object centralises simulation data and UI flags.
+- `resetSimulation()` cancels animation frames, reinitialises ants/boundaries, resets time, stats, and viewBox.
+- `createAnt()` always returns unit velocity vectors; mirrored ants reuse position with negated direction.
+- `renderAll()` rebuilds SVG layers each update; guard against zero-length segments.
+- Geometry helpers: `normalize`, `dot`, `cross`, `reflectAcrossLine`, `distance`.
+- `computeNextEvents()` filters out inactive ants; epsilon comparisons avoid floating precision issues.
+- `zoomSvg()` clamps the viewBox to remain within [0,1] bounds and limits zoom scale.
+- SVG export builds a standalone SVG DOM and serialises via `XMLSerializer`.
+
+Extending / Maintaining
+-----------------------
+- Keep event processing deterministic: maintain small epsilons (`1e-9`) when comparing times and distances.
+- To add new collision types or spatial structures, extend `computeNextEvents()` and keep segment list current.
+- UI additions should follow existing pattern: declare elements at top, extend `state` if persistent values needed, wire up in `attachEvents`.
+- When modifying rendering, remember to update both live SVG drawing and export builder to keep behaviour consistent.
+- Resizing logic depends on `ResizeObserver`; if moving away from inline layout, revisit `adjustSceneSize`.
+- Modal system assumes a single global modal; additional modals should reuse the same body locking behaviour.
+
+Testing Checklist
+-----------------
+- Reset with various densities and symmetric toggles.
+- Run continuously and ensure overlay reports when no further events exist.
+- Confirm inactive ants stay stationary and segments count/length stats update.
+- Export SVG with different layer selections; verify boundary rectangle appears.
+- Check zoom boundaries and that panning is constrained to the unit square.
+- Verify About modal opens on startup, can be closed via button, backdrop, and ESC, and focus returns to About button.
+

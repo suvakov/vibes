@@ -1,0 +1,1074 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <title>Reflecting Ants</title>
+  <style>
+    :root {
+      color-scheme: light dark;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #111;
+      color: #eee;
+    }
+
+    body {
+      margin: 0;
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+      overflow: hidden;
+    }
+
+    body.modal-open {
+      overflow: hidden;
+    }
+
+    header {
+      padding: 1rem clamp(1rem, 5vw, 3rem);
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem 2rem;
+      align-items: center;
+      background: rgba(0, 0, 0, 0.6);
+      backdrop-filter: blur(4px);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    header>div {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+
+    label {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.95rem;
+    }
+
+    input[type="number"] {
+      width: 5.5rem;
+      padding: 0.3rem 0.4rem;
+      border-radius: 4px;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      background: rgba(0, 0, 0, 0.4);
+      color: inherit;
+    }
+
+    button {
+      padding: 0.45rem 0.9rem;
+      border-radius: 6px;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      background: rgba(255, 255, 255, 0.08);
+      color: inherit;
+      font-size: 0.95rem;
+      cursor: pointer;
+      transition: transform 0.1s ease, background 0.1s ease;
+    }
+
+    button:hover {
+      background: rgba(255, 255, 255, 0.16);
+      transform: translateY(-1px);
+    }
+
+    button:active {
+      transform: translateY(0);
+    }
+
+    main {
+      flex: 1;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 0 clamp(0.5rem, 4vw, 1.5rem) clamp(0.5rem, 4vw, 1rem);
+      overflow: hidden;
+    }
+
+    #stats {
+      width: 100%;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.6rem 1.5rem;
+      font-size: 0.95rem;
+      padding: 0.75rem clamp(0.5rem, 4vw, 1.5rem);
+    }
+
+    #viewport {
+      position: relative;
+      flex: 0 0 auto;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 12px;
+      background: radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.05), rgba(0, 0, 0, 0.75));
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: calc(100% - clamp(1rem, 8vw, 3rem));
+      max-width: 900px;
+      min-height: 0;
+    }
+
+    svg {
+      touch-action: none;
+      user-select: none;
+      display: block;
+      flex: none;
+    }
+
+    #overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      display: flex;
+      justify-content: center;
+      pointer-events: none;
+      padding: 0.75rem;
+      font-size: 0.9rem;
+      color: rgba(255, 255, 255, 0.7);
+    }
+
+    #exportControls {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+
+    #exportControls label {
+      font-size: 0.85rem;
+      white-space: nowrap;
+    }
+
+    #aboutModal {
+      position: fixed;
+      inset: 0;
+      z-index: 1000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    #aboutModal[hidden] {
+      display: none;
+    }
+
+    .about-backdrop {
+      position: absolute;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.65);
+    }
+
+    .about-content {
+      position: relative;
+      width: min(600px, calc(100% - 2rem));
+      max-height: calc(100vh - 4rem);
+      padding: 1.5rem;
+      border-radius: 16px;
+      background: rgba(12, 14, 20, 0.95);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      box-shadow: 0 24px 48px rgba(0, 0, 0, 0.45);
+      overflow-y: auto;
+      color: inherit;
+    }
+
+    .about-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      margin-bottom: 0.75rem;
+    }
+
+    .about-header h2 {
+      margin: 0;
+      font-size: 1.4rem;
+    }
+
+    .about-content section h3 {
+      margin: 1.2rem 0 0.5rem;
+      font-size: 1.1rem;
+      font-weight: 600;
+    }
+
+    .about-content section p {
+      line-height: 1.55;
+      margin: 0 0 0.75rem;
+    }
+
+    .about-content ul {
+      margin: 0.5rem 0 0;
+      padding-left: 1.2rem;
+      line-height: 1.5;
+    }
+
+    .about-content li {
+      margin-bottom: 0.4rem;
+    }
+
+    .about-content code {
+      font-family: "SFMono-Regular", consolas, monospace;
+      font-size: 0.9rem;
+      background: rgba(255, 255, 255, 0.08);
+      padding: 0 0.25rem;
+      border-radius: 4px;
+    }
+
+    .close-btn {
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 999px;
+      width: 2rem;
+      height: 2rem;
+      font-size: 1.0rem;
+      display: grid;
+      place-items: center;
+      background: rgba(255, 255, 255, 0.08);
+      color: inherit;
+      cursor: pointer;
+      line-height: 0;
+      padding-bottom: 0.4rem;
+      padding-left: 0.6rem;
+    }
+  </style>
+</head>
+
+<body>
+  <header>
+    <div>
+      <button id="stepBtn">Step</button>
+      <button id="runBtn" data-running="false">Run</button>
+      <button id="resetBtn">Reset</button>
+      <button id="aboutBtn">About</button>
+      <label>
+        Density:
+        <input type="number" id="densityInput" min="1" max="200" step="1" value="24">
+      </label>
+      <label>
+        mind:
+        <input type="number" id="mindInput" min="0.0001" step="0.0001" value="0.001">
+      </label>
+      <label>
+        m:
+        <input type="number" id="mInput" min="1" max="20" step="1" value="3">
+      </label>
+      <label>
+        <input type="checkbox" id="symmetricInput">
+        Symmetric
+      </label>
+    </div>
+    <div id="exportControls">
+      <button id="exportBtn">Export SVG</button>
+      <label><input type="checkbox" id="exportActiveAnts" checked>Active ants</label>
+      <label><input type="checkbox" id="exportInactiveAnts" checked>Inactive ants</label>
+      <label><input type="checkbox" id="exportSegments" checked>Segments</label>
+      <label><input type="checkbox" id="exportBoundaries" checked>Boundaries</label>
+      <label><input type="checkbox" id="exportPaths" checked>Current paths</label>
+    </div>
+  </header>
+  <main>
+    <div id="stats">
+      <span>Total time: <strong id="timeDisplay">0.000</strong></span>
+      <span>Segments: <strong id="segmentCountDisplay">0</strong></span>
+      <span>Total length: <strong id="totalLengthDisplay">0.000</strong></span>
+      <span>Average length: <strong id="avgLengthDisplay">0.000</strong></span>
+      <span>Active ants: <strong id="activeAntsDisplay">0</strong></span>
+    </div>
+    <div id="viewport">
+      <svg id="scene" viewBox="0 0 1 1" preserveAspectRatio="xMidYMid meet">
+        <g id="segmentsLayer"></g>
+        <g id="pathsLayer"></g>
+        <g id="antsLayer"></g>
+      </svg>
+      <div id="overlay"></div>
+    </div>
+  </main>
+  <div id="aboutModal" hidden>
+    <div class="about-backdrop" data-close="true"></div>
+    <div class="about-content" role="dialog" aria-modal="true" aria-labelledby="aboutTitle">
+      <div class="about-header">
+        <h2 id="aboutTitle">Reflecting Ants</h2>
+        <button class="close-btn" id="aboutCloseBtn" aria-label="Close about dialog">X</button>
+      </div>
+      <section>
+        <p>
+          The simulation tracks idealised “ants” moving inside a unit square. Each ant travels at unit speed in a
+          straight line until it collides with another ant’s path, another ant, or the boundary. Collisions are
+          perfectly elastic: the velocity vector is reflected across the line of impact, so the ant continues with the
+          same speed but a mirrored direction.
+        </p>
+        <p>
+          Instead of advancing all ants in fixed time steps, the engine jumps directly between future collision events.
+          For every ant we keep its current position, start time, velocity, and the list of straight-line segments it
+          has already traversed. Whenever an event occurs, a new segment is recorded and the ant’s state updates to the
+          collision point.
+        </p>
+      </section>
+      <section>
+        <h3>Controls &amp; Parameters</h3>
+        <ul>
+          <li><strong>Step / Run</strong>: Advance a single event or continuously progress until you stop or no further
+            events exist.</li>
+          <li><strong>Density</strong>: Number of ants generated at reset. When “Symmetric” is enabled, each base ant is
+            paired with another starting at the same position but moving in the opposite direction.</li>
+          <li><strong>Reset</strong>: Stop any active run and rebuild a fresh initial configuration using the current
+            parameters.</li>
+          <li><strong>mind</strong>: Minimum average length for the last <code>m</code> segments of an ant. If the
+            average drops below this value, the ant becomes inactive and no longer participates in new collisions.</li>
+          <li><strong>m</strong>: Number of recent segments to average when checking the deactivation rule.</li>
+          <li><strong>Symmetric</strong>: Spawn mirrored ants to reveal symmetric patterns.</li>
+          <li><strong>Export SVG</strong>: Download the current state with selectable layers: active/inactive ants,
+            stored segments, boundary frame, and the current in-flight paths.</li>
+          <li><strong>Zoom</strong>: Use the mouse wheel over the square to zoom in/out; the view stays within the unit
+            bounds.</li>
+        </ul>
+      </section>
+    </div>
+  </div>
+
+  <script>
+    (() => {
+      const scene = document.getElementById("scene");
+      const viewport = document.getElementById("viewport");
+      const pathsLayer = document.getElementById("pathsLayer");
+      const segmentsLayer = document.getElementById("segmentsLayer");
+      const antsLayer = document.getElementById("antsLayer");
+      const overlay = document.getElementById("overlay");
+      const timeDisplay = document.getElementById("timeDisplay");
+      const segmentCountDisplay = document.getElementById("segmentCountDisplay");
+      const totalLengthDisplay = document.getElementById("totalLengthDisplay");
+      const avgLengthDisplay = document.getElementById("avgLengthDisplay");
+      const activeAntsDisplay = document.getElementById("activeAntsDisplay");
+      const stepBtn = document.getElementById("stepBtn");
+      const runBtn = document.getElementById("runBtn");
+      const resetBtn = document.getElementById("resetBtn");
+      const aboutBtn = document.getElementById("aboutBtn");
+      const aboutModal = document.getElementById("aboutModal");
+      const aboutCloseBtn = document.getElementById("aboutCloseBtn");
+      const exportBtn = document.getElementById("exportBtn");
+      const exportActiveAntsCheckbox = document.getElementById("exportActiveAnts");
+      const exportInactiveAntsCheckbox = document.getElementById("exportInactiveAnts");
+      const exportSegmentsCheckbox = document.getElementById("exportSegments");
+      const exportBoundariesCheckbox = document.getElementById("exportBoundaries");
+      const exportPathsCheckbox = document.getElementById("exportPaths");
+      const densityInput = document.getElementById("densityInput");
+      const mindInput = document.getElementById("mindInput");
+      const mInput = document.getElementById("mInput");
+      const symmetricInput = document.getElementById("symmetricInput");
+      const headerEl = document.querySelector("header");
+      const mainEl = document.querySelector("main");
+      const statsBar = document.getElementById("stats");
+
+      const SVG_NS = "http://www.w3.org/2000/svg";
+      let overlayTimer = null;
+      let lastSceneSize = -1;
+
+      const state = {
+        ants: [],
+        segments: [],
+        time: 0,
+        running: false,
+        mind: parseFloat(mindInput.value),
+        m: parseInt(mInput.value, 10),
+        symmetric: symmetricInput.checked,
+        lastFrame: performance.now(),
+        animationHandle: null
+      };
+
+      const randomBetween = (min, max) => min + Math.random() * (max - min);
+
+      const showOverlayMessage = (text, duration = 2000) => {
+        if (overlayTimer) {
+          clearTimeout(overlayTimer);
+          overlayTimer = null;
+        }
+        overlay.textContent = text;
+        if (text && duration > 0) {
+          overlayTimer = setTimeout(() => {
+            overlay.textContent = "";
+            overlayTimer = null;
+          }, duration);
+        }
+      };
+
+      const openAboutModal = () => {
+        if (!aboutModal.hidden) return;
+        aboutModal.hidden = false;
+        document.body.classList.add("modal-open");
+        window.addEventListener("keydown", handleAboutKeyDown);
+        setTimeout(() => {
+          aboutCloseBtn.focus({ preventScroll: true });
+        }, 0);
+      };
+
+      const closeAboutModal = () => {
+        if (aboutModal.hidden) return;
+        aboutModal.hidden = true;
+        document.body.classList.remove("modal-open");
+        window.removeEventListener("keydown", handleAboutKeyDown);
+        aboutBtn.focus({ preventScroll: true });
+      };
+
+      const handleAboutKeyDown = (event) => {
+        if (event.key === "Escape") {
+          closeAboutModal();
+        }
+      };
+
+      const createAnt = (id, baseStart = null, baseVelocity = null) => {
+        let direction = baseVelocity ? normalize(baseVelocity) : null;
+        if (!direction) {
+          const angle = randomBetween(0, Math.PI * 2);
+          direction = [Math.cos(angle), Math.sin(angle)];
+        }
+        const start = baseStart ? baseStart.slice() : [Math.random(), Math.random()];
+        return {
+          id,
+          start,
+          startTime: 0,
+          velocity: direction,
+          active: true,
+          segments: [],
+          deactivatedPosition: null
+        };
+      };
+
+      const resetSimulation = () => {
+        state.running = false;
+        if (state.animationHandle) {
+          cancelAnimationFrame(state.animationHandle);
+          state.animationHandle = null;
+        }
+        updateRunButton();
+        state.mind = Math.max(0, parseFloat(mindInput.value) || 0);
+        state.m = Math.max(1, parseInt(mInput.value, 10) || 1);
+        state.symmetric = Boolean(symmetricInput.checked);
+        state.time = 0;
+        state.segments = [];
+        state.ants = [];
+        const density = Math.max(1, Math.min(200, parseInt(densityInput.value, 10) || 0));
+        let antId = 0;
+        for (let i = 0; i < density; i += 1) {
+          const baseAnt = createAnt(antId++);
+          state.ants.push(baseAnt);
+          if (state.symmetric) {
+            const oppositeVelocity = [-baseAnt.velocity[0], -baseAnt.velocity[1]];
+            const mirroredAnt = createAnt(antId++, baseAnt.start, oppositeVelocity);
+            state.ants.push(mirroredAnt);
+          }
+        }
+        addBoundarySegments();
+        currentViewBox = { x: 0, y: 0, w: 1, h: 1 };
+        updateViewBox();
+        renderAll(true);
+        updateStats();
+        adjustSceneSize();
+        showOverlayMessage("", 0);
+      };
+
+      const addBoundarySegments = () => {
+        const corners = [
+          [0, 0], [1, 0],
+          [1, 1], [0, 1],
+          [0, 0]
+        ];
+        for (let i = 0; i < corners.length - 1; i += 1) {
+          const seg = {
+            id: `border-${i}`,
+            antId: null,
+            start: corners[i],
+            end: corners[i + 1],
+            length: distance(corners[i], corners[i + 1]),
+            normal: edgeNormal(corners[i], corners[i + 1]),
+            boundary: true
+          };
+          state.segments.push(seg);
+        }
+      };
+
+      const distance = (a, b) => Math.hypot(b[0] - a[0], b[1] - a[1]);
+
+      const edgeNormal = (a, b) => {
+        const dx = b[0] - a[0];
+        const dy = b[1] - a[1];
+        const length = Math.hypot(dx, dy);
+        if (length === 0) return [0, 0];
+        // Rotate clockwise to get outward normal (since square is CCW)
+        return [dy / length, -dx / length];
+      };
+
+      const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
+
+      const findAntPosition = (ant, time) => {
+        if (!ant.active) {
+          return ant.deactivatedPosition ? ant.deactivatedPosition.slice() : ant.start.slice();
+        }
+        const dt = time - ant.startTime;
+        return [
+          ant.start[0] + ant.velocity[0] * dt,
+          ant.start[1] + ant.velocity[1] * dt
+        ];
+      };
+
+      const dot = (a, b) => a[0] * b[0] + a[1] * b[1];
+
+      const reflectAcrossLine = (velocity, normal) => {
+        const dotVN = dot(velocity, normal);
+        const reflected = [
+          velocity[0] - 2 * dotVN * normal[0],
+          velocity[1] - 2 * dotVN * normal[1]
+        ];
+        const length = Math.hypot(reflected[0], reflected[1]);
+        if (length === 0) return [velocity[0], velocity[1]];
+        return [reflected[0] / length, reflected[1] / length];
+      };
+
+      const cross = (a, b) => a[0] * b[1] - a[1] * b[0];
+
+      const computeNextEvents = () => {
+        let bestEvent = null;
+        for (const ant of state.ants) {
+          if (!ant.active) continue;
+
+          const segmentEvent = nearestSegmentHit(ant);
+          if (segmentEvent && (!bestEvent || segmentEvent.time < bestEvent.time)) {
+            bestEvent = segmentEvent;
+          }
+        }
+
+        const pairEvent = nearestPairCollision();
+        if (pairEvent && (!bestEvent || pairEvent.time < bestEvent.time)) {
+          bestEvent = pairEvent;
+        }
+
+        return bestEvent;
+      };
+
+      const nearestSegmentHit = (ant) => {
+        let nearest = null;
+        for (const segment of state.segments) {
+          if (segment.antId === ant.id && segment === ant.segments.at(-1)) continue;
+          const event = raySegmentIntersection(ant, segment);
+          if (event && event.time > state.time + 1e-9) {
+            if (!nearest || event.time < nearest.time) {
+              nearest = event;
+            }
+          }
+        }
+        return nearest;
+      };
+
+      const raySegmentIntersection = (ant, segment) => {
+        const p = ant.start;
+        const v = ant.velocity;
+        const q = segment.start;
+        const w = [segment.end[0] - segment.start[0], segment.end[1] - segment.start[1]];
+        const det = v[0] * w[1] - v[1] * w[0];
+        if (Math.abs(det) < 1e-12) return null; // parallel
+        const invDet = 1 / det;
+        const pq = [q[0] - p[0], q[1] - p[1]];
+        const t = (pq[0] * w[1] - pq[1] * w[0]) * invDet;
+        const u = (pq[0] * v[1] - pq[1] * v[0]) * invDet;
+        if (t <= 1e-9 || u < 0 || u > 1) return null;
+        const time = ant.startTime + t;
+        const point = [
+          p[0] + v[0] * t,
+          p[1] + v[1] * t
+        ];
+        return {
+          type: "segment",
+          time,
+          point,
+          ant,
+          segment
+        };
+      };
+
+      const nearestPairCollision = () => {
+        let best = null;
+        const ants = state.ants.filter((a) => a.active);
+        for (let i = 0; i < ants.length; i += 1) {
+          const antA = ants[i];
+          for (let j = i + 1; j < ants.length; j += 1) {
+            const antB = ants[j];
+            const event = antPairCollision(antA, antB);
+            if (event && event.time > state.time + 1e-9) {
+              if (!best || event.time < best.time) {
+                best = event;
+              }
+            }
+          }
+        }
+        return best;
+      };
+
+      const antPairCollision = (antA, antB) => {
+        const dirA = antA.velocity;
+        const dirB = antB.velocity;
+        const det = cross(dirA, dirB);
+        if (Math.abs(det) < 1e-12) return null;
+        const delta = [antB.start[0] - antA.start[0], antB.start[1] - antA.start[1]];
+        const sA = cross(delta, dirB) / det;
+        const sB = cross(delta, dirA) / det;
+        if (sA <= 1e-9 || sB <= 1e-9) return null;
+        const timeA = antA.startTime + sA;
+        const timeB = antB.startTime + sB;
+        const eventTime = Math.max(timeA, timeB);
+        if (eventTime <= state.time + 1e-9) return null;
+        const point = [
+          antA.start[0] + dirA[0] * sA,
+          antA.start[1] + dirA[1] * sA
+        ];
+        if (!withinBounds(point)) return null;
+        const antLate = timeA >= timeB ? antA : antB;
+        const antEarly = antLate === antA ? antB : antA;
+        const lateTravel = antLate === antA ? sA : sB;
+        const earlyTravel = antLate === antA ? sB : sA;
+        const timeLate = antLate === antA ? timeA : timeB;
+        const timeEarly = antLate === antA ? timeB : timeA;
+        return {
+          type: "pair",
+          time: eventTime,
+          point,
+          antLate,
+          antEarly,
+          timeLate,
+          timeEarly,
+          lateTravel,
+          earlyTravel,
+          simultaneous: Math.abs(timeA - timeB) <= 1e-6
+        };
+      };
+
+      const withinBounds = (point) => {
+        return point[0] >= -1e-9 && point[0] <= 1 + 1e-9 &&
+          point[1] >= -1e-9 && point[1] <= 1 + 1e-9;
+      };
+
+      const advanceToEvent = (event) => {
+        if (!event) {
+          showOverlayMessage("No further events.", 4000);
+          state.running = false;
+          updateRunButton();
+          return false;
+        }
+
+        state.time = event.time;
+        if (event.type === "segment") {
+          resolveSegmentCollision(event);
+        } else if (event.type === "pair") {
+          resolvePairCollision(event);
+        }
+
+        updateStats();
+        renderAll();
+        showOverlayMessage("", 0);
+        return true;
+      };
+
+      const appendSegment = (ant, point) => {
+        const length = distance(ant.start, point);
+        if (length < 1e-9) return;
+        const segment = {
+          id: `ant-${ant.id}-seg-${ant.segments.length}`,
+          antId: ant.id,
+          start: ant.start.slice(),
+          end: point.slice(),
+          length,
+          boundary: false
+        };
+        ant.segments.push(segment);
+        state.segments.push(segment);
+      };
+
+      const maybeDeactivateAnt = (ant) => {
+        const { mind, m } = state;
+        if (ant.segments.length < m) return;
+        const recent = ant.segments.slice(-m);
+        const avg = recent.reduce((acc, seg) => acc + seg.length, 0) / recent.length;
+        if (avg < mind && ant.active) {
+          ant.active = false;
+          ant.deactivatedPosition = ant.start.slice();
+          ant.velocity = [0, 0];
+        }
+      };
+
+      const resolveSegmentCollision = ({ ant, segment, point }) => {
+        appendSegment(ant, point);
+        ant.start = point.slice();
+        ant.startTime = state.time;
+        const normal = segment.boundary ? segment.normal : edgeNormal(segment.start, segment.end);
+        ant.velocity = reflectAcrossLine(ant.velocity, normal);
+        maybeDeactivateAnt(ant);
+      };
+
+      const resolvePairCollision = (event) => {
+        const { antLate, antEarly, point, simultaneous } = event;
+        if (antLate === antEarly) return;
+        const eventTime = state.time;
+        const lateVelocityBefore = antLate.velocity.slice();
+        const earlyVelocityBefore = antEarly.velocity.slice();
+        const earlyPointAtEvent = findAntPosition(antEarly, eventTime);
+        appendSegment(antEarly, earlyPointAtEvent);
+        appendSegment(antLate, point);
+
+        antEarly.start = earlyPointAtEvent.slice();
+        antEarly.startTime = eventTime;
+        antLate.start = point.slice();
+        antLate.startTime = eventTime;
+
+        if (simultaneous) {
+          antEarly.velocity = normalize(lateVelocityBefore) ?? lateVelocityBefore;
+          antLate.velocity = normalize(earlyVelocityBefore) ?? earlyVelocityBefore;
+        } else {
+          antEarly.velocity = normalize(earlyVelocityBefore) ?? earlyVelocityBefore;
+          const tangent = normalize(earlyVelocityBefore) ?? normalize(lateVelocityBefore) ?? [0, 1];
+          const normal = [-tangent[1], tangent[0]];
+          antLate.velocity = reflectAcrossLine(lateVelocityBefore, normal);
+        }
+
+        maybeDeactivateAnt(antEarly);
+        maybeDeactivateAnt(antLate);
+      };
+
+      const normalize = (vec) => {
+        const len = Math.hypot(vec[0], vec[1]);
+        if (len < 1e-12) return null;
+        return [vec[0] / len, vec[1] / len];
+      };
+
+      const renderAll = (reset = false) => {
+        if (reset) {
+          pathsLayer.innerHTML = "";
+          segmentsLayer.innerHTML = "";
+          antsLayer.innerHTML = "";
+        }
+        renderCurrentPaths();
+        renderSegments();
+        renderAnts();
+      };
+
+      const renderCurrentPaths = () => {
+        const frag = document.createDocumentFragment();
+        for (const ant of state.ants) {
+          if (!ant.active) continue;
+          const currentPosition = findAntPosition(ant, state.time);
+          const length = distance(ant.start, currentPosition);
+          if (length < 1e-9) continue;
+          const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+          line.setAttribute("x1", ant.start[0]);
+          line.setAttribute("y1", 1 - ant.start[1]);
+          line.setAttribute("x2", currentPosition[0]);
+          line.setAttribute("y2", 1 - currentPosition[1]);
+          line.setAttribute("stroke", "rgba(140, 220, 255, 0.7)");
+          line.setAttribute("stroke-width", "0.0012");
+          line.setAttribute("stroke-dasharray", "0.005 0.003");
+          line.setAttribute("stroke-linecap", "round");
+          frag.appendChild(line);
+        }
+        pathsLayer.replaceChildren(frag);
+      };
+
+      const renderSegments = () => {
+        const frag = document.createDocumentFragment();
+        for (const segment of state.segments) {
+          const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+          line.setAttribute("x1", segment.start[0]);
+          line.setAttribute("y1", 1 - segment.start[1]);
+          line.setAttribute("x2", segment.end[0]);
+          line.setAttribute("y2", 1 - segment.end[1]);
+          const boundary = segment.boundary;
+          line.setAttribute("stroke", boundary ? "#cccccc" : "#ff6464");
+          line.setAttribute("stroke-width", boundary ? "0.003" : "0.0015");
+          line.setAttribute("stroke-linecap", "round");
+          frag.appendChild(line);
+        }
+        segmentsLayer.replaceChildren(frag);
+      };
+
+      const renderAnts = () => {
+        const frag = document.createDocumentFragment();
+        for (const ant of state.ants) {
+          const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+          const position = findAntPosition(ant, state.time);
+          circle.setAttribute("cx", position[0]);
+          circle.setAttribute("cy", 1 - position[1]);
+          circle.setAttribute("r", ant.active ? "0.007" : "0.005");
+          circle.setAttribute("fill", ant.active ? "#8cf" : "#666");
+          frag.appendChild(circle);
+        }
+        antsLayer.replaceChildren(frag);
+      };
+
+      const updateStats = () => {
+        const totalLength = state.segments.filter((seg) => !seg.boundary).reduce((acc, seg) => acc + seg.length, 0);
+        const count = state.segments.filter((seg) => !seg.boundary).length;
+        timeDisplay.textContent = state.time.toFixed(3);
+        segmentCountDisplay.textContent = count.toString();
+        totalLengthDisplay.textContent = totalLength.toFixed(3);
+        avgLengthDisplay.textContent = count > 0 ? (totalLength / count).toFixed(3) : "0.000";
+        activeAntsDisplay.textContent = state.ants.filter((ant) => ant.active).length.toString();
+      };
+
+      const buildExportSvgString = (options) => {
+        const includeSomething = options.activeAnts || options.inactiveAnts || options.segments || options.boundaries || options.currentPaths;
+        if (!includeSomething) return null;
+        const exportSvg = document.createElementNS(SVG_NS, "svg");
+        const viewBox = scene.getAttribute("viewBox") || "0 0 1 1";
+        exportSvg.setAttribute("xmlns", SVG_NS);
+        exportSvg.setAttribute("viewBox", viewBox);
+        exportSvg.setAttribute("width", "1000");
+        exportSvg.setAttribute("height", "1000");
+
+        if (options.segments || options.boundaries) {
+          const segmentsGroup = document.createElementNS(SVG_NS, "g");
+          segmentsGroup.setAttribute("id", "export-segments");
+          for (const segment of state.segments) {
+            if (segment.boundary && !options.boundaries) continue;
+            if (!segment.boundary && !options.segments) continue;
+            const line = document.createElementNS(SVG_NS, "line");
+            line.setAttribute("x1", segment.start[0]);
+            line.setAttribute("y1", 1 - segment.start[1]);
+            line.setAttribute("x2", segment.end[0]);
+            line.setAttribute("y2", 1 - segment.end[1]);
+            const boundary = segment.boundary;
+            line.setAttribute("stroke", boundary ? "#444444" : "#ff6464");
+            line.setAttribute("stroke-width", boundary ? "0.003" : "0.0015");
+            line.setAttribute("stroke-linecap", "round");
+            segmentsGroup.appendChild(line);
+          }
+          if (segmentsGroup.childNodes.length > 0) {
+            exportSvg.appendChild(segmentsGroup);
+          }
+        }
+
+        if (options.currentPaths) {
+          const pathsGroup = document.createElementNS(SVG_NS, "g");
+          pathsGroup.setAttribute("id", "export-current-paths");
+          for (const ant of state.ants) {
+            if (!ant.active) continue;
+            const currentPosition = findAntPosition(ant, state.time);
+            const length = distance(ant.start, currentPosition);
+            if (length < 1e-9) continue;
+            const line = document.createElementNS(SVG_NS, "line");
+            line.setAttribute("x1", ant.start[0]);
+            line.setAttribute("y1", 1 - ant.start[1]);
+            line.setAttribute("x2", currentPosition[0]);
+            line.setAttribute("y2", 1 - currentPosition[1]);
+            line.setAttribute("stroke", "rgba(140,220,255,0.7)");
+            line.setAttribute("stroke-width", "0.0012");
+            line.setAttribute("stroke-dasharray", "0.005 0.003");
+            line.setAttribute("stroke-linecap", "round");
+            pathsGroup.appendChild(line);
+          }
+          if (pathsGroup.childNodes.length > 0) {
+            exportSvg.appendChild(pathsGroup);
+          }
+        }
+
+        if (options.activeAnts || options.inactiveAnts) {
+          const antsGroup = document.createElementNS(SVG_NS, "g");
+          antsGroup.setAttribute("id", "export-ants");
+          for (const ant of state.ants) {
+            if (ant.active && !options.activeAnts) continue;
+            if (!ant.active && !options.inactiveAnts) continue;
+            const circle = document.createElementNS(SVG_NS, "circle");
+            const position = findAntPosition(ant, state.time);
+            circle.setAttribute("cx", position[0]);
+            circle.setAttribute("cy", 1 - position[1]);
+            circle.setAttribute("r", ant.active ? "0.007" : "0.005");
+            circle.setAttribute("fill", ant.active ? "#8cf" : "#666");
+            antsGroup.appendChild(circle);
+          }
+          if (antsGroup.childNodes.length > 0) {
+            exportSvg.appendChild(antsGroup);
+          }
+        }
+
+        if (options.boundaries) {
+          const borderRect = document.createElementNS(SVG_NS, "rect");
+          borderRect.setAttribute("x", "0");
+          borderRect.setAttribute("y", "0");
+          borderRect.setAttribute("width", "1");
+          borderRect.setAttribute("height", "1");
+          borderRect.setAttribute("fill", "none");
+          borderRect.setAttribute("stroke", "#222222");
+          borderRect.setAttribute("stroke-width", "0.004");
+          borderRect.setAttribute("vector-effect", "non-scaling-stroke");
+          exportSvg.insertBefore(borderRect, exportSvg.firstChild);
+        }
+
+        const serializer = new XMLSerializer();
+        return serializer.serializeToString(exportSvg);
+      };
+
+      const exportCurrentScene = () => {
+        const options = {
+          activeAnts: exportActiveAntsCheckbox.checked,
+          inactiveAnts: exportInactiveAntsCheckbox.checked,
+          segments: exportSegmentsCheckbox.checked,
+          boundaries: exportBoundariesCheckbox.checked,
+          currentPaths: exportPathsCheckbox.checked
+        };
+        const svgContent = buildExportSvgString(options);
+        if (!svgContent) {
+          showOverlayMessage("Select elements to export.", 2500);
+          return;
+        }
+        const blob = new Blob([svgContent], { type: "image/svg+xml;charset=utf-8" });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = `reflecting-ants-${Date.now()}.svg`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+        showOverlayMessage("SVG exported.", 2000);
+      };
+
+      const stepSimulation = () => {
+        const event = computeNextEvents();
+        return advanceToEvent(event);
+      };
+
+      const updateRunButton = () => {
+        runBtn.textContent = state.running ? "Stop" : "Run";
+        runBtn.dataset.running = state.running ? "true" : "false";
+      };
+
+      const runLoop = (timestamp) => {
+        const elapsed = (timestamp - state.lastFrame) / 1000;
+        if (elapsed > 0.016) {
+          state.lastFrame = timestamp;
+          const progressed = stepSimulation();
+          if (!progressed) {
+            state.running = false;
+            updateRunButton();
+            return;
+          }
+        }
+        if (state.running) {
+          state.animationHandle = requestAnimationFrame(runLoop);
+        }
+      };
+
+      const toggleRun = () => {
+        state.running = !state.running;
+        updateRunButton();
+        if (state.running) {
+          state.lastFrame = performance.now();
+          state.animationHandle = requestAnimationFrame(runLoop);
+        } else if (state.animationHandle) {
+          cancelAnimationFrame(state.animationHandle);
+          state.animationHandle = null;
+        }
+      };
+
+      const attachEvents = () => {
+        stepBtn.addEventListener("click", () => {
+          if (state.running) return;
+          stepSimulation();
+        });
+
+        runBtn.addEventListener("click", () => {
+          toggleRun();
+        });
+
+        resetBtn.addEventListener("click", () => {
+          if (state.running) {
+            state.running = false;
+            if (state.animationHandle) {
+              cancelAnimationFrame(state.animationHandle);
+              state.animationHandle = null;
+            }
+            updateRunButton();
+          }
+          resetSimulation();
+        });
+
+        aboutBtn.addEventListener("click", openAboutModal);
+        aboutCloseBtn.addEventListener("click", closeAboutModal);
+        aboutModal.addEventListener("click", (event) => {
+          if (event.target instanceof HTMLElement && event.target.dataset.close === "true") {
+            closeAboutModal();
+          }
+        });
+
+        exportBtn.addEventListener("click", exportCurrentScene);
+
+        mindInput.addEventListener("change", () => {
+          state.mind = Math.max(0, parseFloat(mindInput.value) || 0);
+        });
+
+        mInput.addEventListener("change", () => {
+          state.m = Math.max(1, parseInt(mInput.value, 10) || 1);
+        });
+
+        densityInput.addEventListener("change", resetSimulation);
+        symmetricInput.addEventListener("change", resetSimulation);
+
+        scene.addEventListener("wheel", (event) => {
+          event.preventDefault();
+          const scaleDelta = Math.exp(event.deltaY * -0.001);
+          zoomSvg(event.offsetX, event.offsetY, scaleDelta);
+        }, { passive: false });
+      };
+
+      let currentViewBox = { x: 0, y: 0, w: 1, h: 1 };
+
+      const zoomSvg = (offsetX, offsetY, scaleDelta) => {
+        const { width, height } = scene.getBoundingClientRect();
+        if (!width || !height) return;
+        const svgX = currentViewBox.x + (offsetX / width) * currentViewBox.w;
+        const svgY = currentViewBox.y + (offsetY / height) * currentViewBox.h;
+        const newW = clamp(currentViewBox.w / scaleDelta, 0.02, 1);
+        const newH = clamp(currentViewBox.h / scaleDelta, 0.02, 1);
+        const newX = clamp(svgX - (offsetX / width) * newW, 0, 1 - newW);
+        const newY = clamp(svgY - (offsetY / height) * newH, 0, 1 - newH);
+        currentViewBox = { x: newX, y: newY, w: newW, h: newH };
+        updateViewBox();
+      };
+
+      const updateViewBox = () => {
+        const { x, y, w, h } = currentViewBox;
+        scene.setAttribute("viewBox", `${x} ${y} ${w} ${h}`);
+      };
+
+      const adjustSceneSize = () => {
+        const mainRect = mainEl.getBoundingClientRect();
+        const statsRect = statsBar.getBoundingClientRect();
+        const availableHeight = Math.max(0, mainRect.height - statsRect.height - 16);
+        const availableWidth = viewport.clientWidth;
+        const size = Math.max(0, Math.min(availableWidth, availableHeight));
+        if (!Number.isFinite(size) || size <= 0) return;
+        if (Math.abs(size - lastSceneSize) < 0.5) return;
+        lastSceneSize = size;
+        viewport.style.height = `${size}px`;
+        scene.style.width = `${size}px`;
+        scene.style.height = `${size}px`;
+      };
+
+      const init = () => {
+        attachEvents();
+        const resizeObserver = new ResizeObserver(() => {
+          adjustSceneSize();
+        });
+        resizeObserver.observe(mainEl);
+        resizeObserver.observe(statsBar);
+        resizeObserver.observe(viewport);
+        window.addEventListener("resize", adjustSceneSize);
+        adjustSceneSize();
+        resetSimulation();
+        openAboutModal();
+      };
+
+      init();
+    })();
+  </script>
+</body>
+
+</html>
