@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sliding Puzzle Chess</title>
+    <style>
+        body {
+            font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            background-color: #1e1e1e;
+            color: #f0f0f0;
+            touch-action: manipulation;
+            /* Disable double-tap zoom on mobile */
+        }
+
+        h1 {
+            font-weight: 300;
+            margin-bottom: 0;
+        }
+
+        #game-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        #message-area {
+            font-size: 1.5rem;
+            font-weight: 500;
+            height: 2.5rem;
+            text-align: center;
+        }
+
+        #board {
+            display: grid;
+            grid-template-columns: repeat(8, min(11vw, 70px));
+            grid-template-rows: repeat(8, min(11vw, 70px));
+            border: 4px solid #505050;
+            border-radius: 8px;
+            background-color: #333;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.4);
+        }
+
+        .square {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: min(8vw, 54px);
+            user-select: none;
+            transition: background-color 0.15s ease-out, outline 0.15s ease-out;
+        }
+
+        .light {
+            background-color: #f0d9b5;
+        }
+
+        .dark {
+            background-color: #b58863;
+        }
+
+        .white-piece {
+            color: #ffffff;
+            text-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
+        }
+
+        .black-piece {
+            color: #000000;
+            text-shadow: 0 0 5px rgba(255, 255, 255, 0.3);
+        }
+
+        .void {
+            background-color: #2a2a2a;
+            border: 1px solid #444;
+            box-sizing: border-box;
+            background-image: linear-gradient(45deg, #333 25%, transparent 25%, transparent 75%, #333 75%, #333),
+                linear-gradient(45deg, #333 25%, transparent 25%, transparent 75%, #333 75%, #333);
+            background-size: 20px 20px;
+            background-position: 0 0, 10px 10px;
+        }
+
+        .void.selected {
+            outline: 4px solid #00aaff;
+            outline-offset: -4px;
+            z-index: 10;
+        }
+
+        .selected-piece {
+            outline: 4px solid #4a90e2;
+            outline-offset: -4px;
+            z-index: 10;
+        }
+
+        .valid-move {
+            position: relative;
+        }
+
+        .valid-move::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 35%;
+            height: 35%;
+            background-color: rgba(74, 144, 226, 0.5);
+            border-radius: 50%;
+            pointer-events: none;
+            /* Allows clicks to pass through */
+        }
+
+        .valid-move.capture::after {
+            background-color: transparent;
+            border: 5px solid rgba(208, 2, 27, 0.6);
+            width: 70%;
+            height: 70%;
+            box-sizing: border-box;
+        }
+
+        .valid-slide-highlight {
+            outline: 4px solid #d000ff;
+            outline-offset: -4px;
+            z-index: 5;
+            cursor: pointer;
+        }
+
+        #reset-button {
+            font-size: 1rem;
+            font-weight: 600;
+            padding: 10px 20px;
+            background-color: #4a90e2;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.2s, transform 0.1s;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+        }
+
+        #reset-button:hover {
+            background-color: #357abd;
+        }
+
+        #reset-button:active {
+            transform: scale(0.98);
+        }
+    </style>
+</head>
+
+<body>
+
+    <h1>Sliding Puzzle Chess</h1>
+    <h2>Based on <a href="https://xkcd.com/3139/">XKCD 3139</a></h2>
+
+    <div id="game-container">
+        <div id="message-area">White's Turn</div>
+        <div id="board"></div>
+        <button id="reset-button">New Game</button>
+    </div>
+    <br>
+    <a href="https://xkcd.com/3139/"><img src="https://imgs.xkcd.com/comics/chess_variant_2x.png" /></a>
+
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const boardElement = document.getElementById('board');
+            const messageElement = document.getElementById('message-area');
+            const resetButton = document.getElementById('reset-button');
+
+            // --- Piece Definitions ---
+            const PIECES = {
+                'r': '♜', 'n': '♞', 'b': '♝', 'q': '♛', 'k': '♚', 'p': '♟',
+                'R': '♖', 'N': '♘', 'B': '♗', 'Q': '♕', 'K': '♔', 'P': '♙'
+            };
+
+            const STARTING_FEN = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR';
+
+            // --- Game State ---
+            let board = []; // 8x8 array, e.g., board[row][col]
+            let currentPlayer = 'white';
+            let voidTopLeft = { row: -1, col: -1 };
+            let selectedPiece = null; // { row, col, piece }
+            let selectedVoid = false;
+            let validMoves = [];
+            let validSlides = [];
+
+            // --- Core Game Logic ---
+
+            function initGame() {
+                board = createBoardFromFEN(STARTING_FEN);
+                currentPlayer = 'white';
+                voidTopLeft = randomizeVoid();
+                selectedPiece = null;
+                selectedVoid = false;
+                validMoves = [];
+                validSlides = [];
+                updateMessage();
+                renderBoard();
+            }
+
+            function createBoardFromFEN(fen) {
+                const newBoard = Array.from({ length: 8 }, () => Array(8).fill(null));
+                const [piecePlacement] = fen.split(' ');
+                let row = 0;
+                let col = 0;
+
+                for (const char of piecePlacement) {
+                    if (char === '/') {
+                        row++;
+                        col = 0;
+                    } else if (/\d/.test(char)) {
+                        col += parseInt(char);
+                    } else {
+                        newBoard[row][col] = {
+                            type: char.toLowerCase(),
+                            color: char === char.toUpperCase() ? 'white' : 'black',
+                            symbol: PIECES[char]
+                        };
+                        col++;
+                    }
+                }
+                return newBoard;
+            }
+
+            function randomizeVoid() {
+                // The 8 possible 2x2 squares in the middle (ranks 3-6)
+                const possibleVoidTopLefts = [
+                    { row: 2, col: 0 }, { row: 2, col: 2 }, { row: 2, col: 4 }, { row: 2, col: 6 },
+                    { row: 4, col: 0 }, { row: 4, col: 2 }, { row: 4, col: 4 }, { row: 4, col: 6 }
+                ];
+                return possibleVoidTopLefts[Math.floor(Math.random() * possibleVoidTopLefts.length)];
+            }
+
+            function renderBoard() {
+                boardElement.innerHTML = '';
+                for (let r = 0; r < 8; r++) {
+                    for (let c = 0; c < 8; c++) {
+                        const square = document.createElement('div');
+                        square.classList.add('square');
+                        square.classList.add((r + c) % 2 === 0 ? 'light' : 'dark');
+
+                        if (isVoid(r, c)) {
+                            square.classList.add('void');
+                            if (selectedVoid) {
+                                square.classList.add('selected');
+                            }
+                        } else {
+                            const piece = board[r][c];
+                            if (piece) {
+                                square.textContent = piece.symbol;
+                                square.classList.add(piece.color === 'white' ? 'white-piece' : 'black-piece');
+                            }
+
+                            // Add highlights
+                            if (selectedPiece && selectedPiece.row === r && selectedPiece.col === c) {
+                                square.classList.add('selected-piece');
+                            }
+
+                            const move = validMoves.find(m => m.row === r && m.col === c);
+                            if (move) {
+                                square.classList.add('valid-move');
+                                if (move.isCapture) {
+                                    square.classList.add('capture');
+                                }
+                            }
+                        }
+
+                        // Highlight valid slide targets (all 4 squares of the 2x2 block)
+                        const isPartOfSlideTarget = validSlides.some(s => r >= s.row && r < s.row + 2 && c >= s.col && c < s.col + 2);
+                        if (isPartOfSlideTarget) {
+                            square.classList.add('valid-slide-highlight');
+                        }
+
+                        square.dataset.row = r;
+                        square.dataset.col = c;
+                        square.addEventListener('click', () => handleSquareClick(r, c));
+                        boardElement.appendChild(square);
+                    }
+                }
+            }
+
+            function handleSquareClick(row, col) {
+                const clickedPiece = board[row][col];
+                const clickedOnVoid = isVoid(row, col);
+
+                // --- Handle Slide Logic ---
+                if (selectedVoid) {
+                    // Check if clicking any square within a valid slide target
+                    const slideTarget = validSlides.find(s => row >= s.row && row < s.row + 2 && col >= s.col && col < s.col + 2);
+                    if (slideTarget) {
+                        performSlide(slideTarget.row, slideTarget.col);
+                        nextTurn();
+                    } else {
+                        // Clicked anywhere else (including void again) to cancel
+                        clearSelection();
+                        renderBoard();
+                    }
+                    return;
+                }
+
+                // --- Handle Piece Move Logic ---
+
+                // 1. Click on the void to INITIATE a slide
+                if (clickedOnVoid) {
+                    clearSelection();
+                    selectedVoid = true;
+                    validSlides = calculateValidSlides();
+                    renderBoard();
+                    return;
+                }
+
+                // 2. Click on a valid move square
+                if (selectedPiece && validMoves.find(m => m.row === row && m.col === col)) {
+                    performMove(selectedPiece.row, selectedPiece.col, row, col);
+                    nextTurn();
+                    return;
+                }
+
+                // 3. Click on one of your own pieces
+                if (clickedPiece && clickedPiece.color === currentPlayer) {
+                    selectPiece(row, col, clickedPiece);
+                    renderBoard();
+                    return;
+                }
+
+                // 4. Click on an empty square or enemy piece (not a valid move)
+                clearSelection();
+                renderBoard();
+            }
+
+            function selectPiece(row, col, piece) {
+                clearSelection();
+                selectedPiece = { row, col, piece };
+                validMoves = calculateValidMoves(row, col, piece);
+            }
+
+            function clearSelection() {
+                selectedPiece = null;
+                selectedVoid = false;
+                validMoves = [];
+                validSlides = [];
+            }
+
+            function nextTurn() {
+                currentPlayer = (currentPlayer === 'white' ? 'black' : 'white');
+                clearSelection();
+                updateMessage();
+                renderBoard();
+                // In a full game, we would check for check/checkmate here
+            }
+
+            function performMove(fromRow, fromCol, toRow, toCol) {
+                // Basic move, no en-passant, castling, or promotion
+                board[toRow][toCol] = board[fromRow][fromCol];
+                board[fromRow][fromCol] = null;
+            }
+
+            function performSlide(targetBlockRow, targetBlockCol) {
+                const voidRow = voidTopLeft.row;
+                const voidCol = voidTopLeft.col;
+
+                // Temporarily store the 2x2 block of pieces
+                const tempBlock = [
+                    [board[targetBlockRow][targetBlockCol], board[targetBlockRow][targetBlockCol + 1]],
+                    [board[targetBlockRow + 1][targetBlockCol], board[targetBlockRow + 1][targetBlockCol + 1]]
+                ];
+
+                // Move pieces from target block to void block
+                board[voidRow][voidCol] = tempBlock[0][0];
+                board[voidRow][voidCol + 1] = tempBlock[0][1];
+                board[voidRow + 1][voidCol] = tempBlock[1][0];
+                board[voidRow + 1][voidCol + 1] = tempBlock[1][1];
+
+                // Clear the target block (it's the new void)
+                board[targetBlockRow][targetBlockCol] = null;
+                board[targetBlockRow][targetBlockCol + 1] = null;
+                board[targetBlockRow + 1][targetBlockCol] = null;
+                board[targetBlockRow + 1][targetBlockCol + 1] = null;
+
+                // Update the void position
+                voidTopLeft = { row: targetBlockRow, col: targetBlockCol };
+            }
+
+            function updateMessage() {
+                messageElement.textContent = `${currentPlayer.charAt(0).toUpperCase() + currentPlayer.slice(1)}'s Turn`;
+            }
+
+            // --- Utility Functions ---
+
+            function isVoid(row, col) {
+                return row >= voidTopLeft.row && row < voidTopLeft.row + 2 &&
+                    col >= voidTopLeft.col && col < voidTopLeft.col + 2;
+            }
+
+            function isOffBoard(row, col) {
+                return row < 0 || row > 7 || col < 0 || col > 7;
+            }
+
+            function isValidTarget(row, col, pieceColor) {
+                if (isOffBoard(row, col) || isVoid(row, col)) {
+                    return { valid: false, stop: true }; // Invalid, and blocks path
+                }
+                const targetPiece = board[row][col];
+                if (targetPiece) {
+                    if (targetPiece.color === pieceColor) {
+                        return { valid: false, stop: true }; // Blocked by own piece
+                    } else {
+                        return { valid: true, isCapture: true, stop: true }; // Valid capture, blocks path
+                    }
+                }
+                return { valid: true, isCapture: false, stop: false }; // Empty square
+            }
+
+
+            // --- Move Calculation ---
+
+            function calculateValidSlides() {
+                const { row: vr, col: vc } = voidTopLeft;
+                const possibleSlides = [
+                    { row: vr - 2, col: vc }, // Up
+                    { row: vr + 2, col: vc }, // Down
+                    { row: vr, col: vc - 2 }, // Left
+                    { row: vr, col: vc + 2 }  // Right
+                ];
+
+                // Filter slides that are on the board (a 2x2 block's top-left can be at row 6 or col 6)
+                return possibleSlides.filter(s => s.row >= 0 && s.row <= 6 && s.col >= 0 && s.col <= 6);
+            }
+
+            function calculateValidMoves(row, col, piece) {
+                const moves = [];
+                switch (piece.type) {
+                    case 'p': moves.push(...getPawnMoves(row, col, piece.color)); break;
+                    case 'r': moves.push(...getSlidingMoves(row, col, piece.color, [[-1, 0], [1, 0], [0, -1], [0, 1]])); break;
+                    case 'n': moves.push(...getKnightMoves(row, col, piece.color)); break;
+                    case 'b': moves.push(...getSlidingMoves(row, col, piece.color, [[-1, -1], [-1, 1], [1, -1], [1, 1]])); break;
+                    case 'q': moves.push(...getSlidingMoves(row, col, piece.color, [[-1, 0], [1, 0], [0, -1], [0, 1], [-1, -1], [-1, 1], [1, -1], [1, 1]])); break;
+                    case 'k': moves.push(...getKingMoves(row, col, piece.color)); break;
+                }
+                return moves;
+            }
+
+            function getPawnMoves(row, col, color) {
+                const moves = [];
+                const dir = (color === 'white' ? -1 : 1);
+                const startRow = (color === 'white' ? 6 : 1);
+
+                // 1. Move forward
+                let targetRow = row + dir;
+                let targetCol = col;
+                if (!isOffBoard(targetRow, targetCol) && !isVoid(targetRow, targetCol) && !board[targetRow][targetCol]) {
+                    moves.push({ row: targetRow, col: targetCol, isCapture: false });
+
+                    // 2. Double move from start
+                    if (row === startRow) {
+                        targetRow = row + 2 * dir;
+                        if (!isOffBoard(targetRow, targetCol) && !isVoid(targetRow, targetCol) && !board[targetRow][targetCol]) {
+                            moves.push({ row: targetRow, col: targetCol, isCapture: false });
+                        }
+                    }
+                }
+
+                // 3. Captures
+                const captureCols = [col - 1, col + 1];
+                targetRow = row + dir;
+                for (const c of captureCols) {
+                    if (!isOffBoard(targetRow, c) && !isVoid(targetRow, c) && board[targetRow][c] && board[targetRow][c].color !== color) {
+                        moves.push({ row: targetRow, col: c, isCapture: true });
+                    }
+                }
+                return moves;
+            }
+
+            function getSlidingMoves(row, col, color, directions) {
+                const moves = [];
+                for (const [dr, dc] of directions) {
+                    for (let i = 1; i < 8; i++) {
+                        const targetRow = row + i * dr;
+                        const targetCol = col + i * dc;
+
+                        const target = isValidTarget(targetRow, targetCol, color);
+
+                        if (target.valid) {
+                            moves.push({ row: targetRow, col: targetCol, isCapture: target.isCapture });
+                        }
+                        if (target.stop) {
+                            break; // Path blocked
+                        }
+                    }
+                }
+                return moves;
+            }
+
+            function getKnightMoves(row, col, color) {
+                const moves = [];
+                const deltas = [
+                    [-2, -1], [-2, 1], [-1, -2], [-1, 2],
+                    [1, -2], [1, 2], [2, -1], [2, 1]
+                ];
+                for (const [dr, dc] of deltas) {
+                    const targetRow = row + dr;
+                    const targetCol = col + dc;
+                    const target = isValidTarget(targetRow, targetCol, color);
+                    if (target.valid) {
+                        moves.push({ row: targetRow, col: targetCol, isCapture: target.isCapture });
+                    }
+                }
+                return moves;
+            }
+
+            function getKingMoves(row, col, color) {
+                const moves = [];
+                for (let dr = -1; dr <= 1; dr++) {
+                    for (let dc = -1; dc <= 1; dc++) {
+                        if (dr === 0 && dc === 0) continue;
+                        const targetRow = row + dr;
+                        const targetCol = col + dc;
+                        const target = isValidTarget(targetRow, targetCol, color);
+                        if (target.valid) {
+                            moves.push({ row: targetRow, col: targetCol, isCapture: target.isCapture });
+                        }
+                    }
+                }
+                return moves;
+            }
+
+            // --- Event Listeners ---
+            resetButton.addEventListener('click', initGame);
+
+            // --- Start Game ---
+            initGame();
+        });
+    </script>
+
+</body>
+
+</html>
