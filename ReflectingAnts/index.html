@@ -449,7 +449,7 @@
         state.time = 0;
         state.segments = [];
         state.ants = [];
-        const density = Math.max(1, Math.min(200, parseInt(densityInput.value, 10) || 0));
+        const density = Math.max(1, Math.min(2000, parseInt(densityInput.value, 10) || 0));
         let antId = 0;
         for (let i = 0; i < density; i += 1) {
           const baseAnt = createAnt(antId++);
