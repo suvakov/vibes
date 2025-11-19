@@ -52,8 +52,8 @@
                 two Jacobi vectors:
             </p>
             <p>
-                <code>ρ₁ = (r₂ - r₁) / √2</code><br>
-                <code>ρ₂ = (2r₃ - r₁ - r₂) / √6</code>
+                $$\rho_1 = (r_2 - r_1) / \sqrt{2}$$
+                $$\rho_2 = (2r_3 - r_1 - r_2) / \sqrt{6}$$
             </p>
             <p>
                 These vectors describe the relative positions. $\mathbf{\rho}_1$ is the vector between the first two
@@ -63,21 +63,26 @@
             <p>
                 From these, we can construct 3 coordinates $(w_1, w_2, w_3)$ that define the shape:
             </p>
-            <ul>
-                <li><code>w₁ = |ρ₁|² - |ρ₂|²</code></li>
-                <li><code>w₂ = 2(ρ₁ · ρ₂)</code></li>
-                <li><code>w₃ = 2(ρ₁ × ρ₂)</code> (scalar cross product in 2D)</li>
-            </ul>
             <p>
-                Remarkably, these coordinates satisfy <code>w₁² + w₂² + w₃² = I²</code>, where $I$ is related to the
+                $$w_1 = |\mathbf{\rho}_1|^2 - |\mathbf{\rho}_2|^2$$
+                $$w_2 = 2(\mathbf{\rho}_1 \cdot \mathbf{\rho}_2)$$
+                $$w_3 = 2(\mathbf{\rho}_1 \times \mathbf{\rho}_2) \cdot \mathbf{e}_z$$
+            </p>
+            <p>
+                Remarkably, these coordinates satisfy $w_1^2 + w_2^2 + w_3^2 = I^2$, where $I$ is related to the
                 moment of inertia (size).
             </p>
             <p>
-                To look at the shape alone, we normalize these coordinates by the size $I = \sqrt{w_1^2 + w_2^2 +
-                w_3^2}$. This gives us the coordinates on the <strong>Unit Sphere</strong>:
+                To look at the shape alone, we normalize these coordinates by the size $I = |\mathbf{\rho}_1|^2 +
+                |\mathbf{\rho}_2|^2$. This gives us the coordinates on the <strong>Unit
+                    Sphere</strong>:
             </p>
             <p>
-                $$ x = \frac{w_1}{I}, \quad y = \frac{w_2}{I}, \quad z = \frac{w_3}{I} $$
+                $$ x = \frac{|\mathbf{\rho}_1|^2 - |\mathbf{\rho}_2|^2}{|\mathbf{\rho}_1|^2 + |\mathbf{\rho}_2|^2},
+                \quad y = \frac{2(\mathbf{\rho}_1 \cdot \mathbf{\rho}_2)}{|\mathbf{\rho}_1|^2 + |\mathbf{\rho}_2|^2},
+                \quad z =
+                \frac{2(\mathbf{\rho}_1 \times \mathbf{\rho}_2) \cdot \mathbf{e}_z}{|\mathbf{\rho}_1|^2 +
+                |\mathbf{\rho}_2|^2} $$
             </p>
             <p>
                 These satisfy $x^2 + y^2 + z^2 = 1$.
