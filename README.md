@@ -1,6 +1,5 @@
-# Vibes
+# Web Vibes
 
 Live site: [https://suvakov.github.io/vibes/](https://suvakov.github.io/vibes/)
 
-- [Reflecting Ants](ReflectingAnts/index.html) - Simulate a pattern made by moving ants that reflects the trajectories of other ants.
-- [Swap Puzzle](SwapPuzzle/index.html) - Rebuild the scrambled image by swapping whole rows and columns across expanding grids.
+This repository contains a collection of lightweight web applications generated entirely via few-shot prompting with LLMs (mainly Gemini 2.5 and 3.0).

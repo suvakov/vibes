@@ -55,7 +55,7 @@
       list-style: none;
     }
 
-    a {
+    a.vibe {
       display: block;
       padding: 1.2rem 1.4rem;
       border-radius: 14px;
@@ -83,6 +83,10 @@
       font-size: 0.95rem;
       color: rgba(255, 255, 255, 0.7);
     }
+
+    p {
+      margin-top: 0.5rem;
+    }
   </style>
 </head>
 
@@ -91,29 +95,32 @@
     <header>
       <h1>Vibes</h1>
       <p>Growing collection of web vibes. Pick a vibe to start exploring.</p>
+      <p>This gallery showcases the results of playing with large language models and old ideas: lightweight HTML/JS
+        applications generated entirely via few-shot prompting with LLMs (mainly Gemini 2.5 and 3.0).</p>
+      <p>For source code, check out the <a href="https://github.com/suvakov/vibes">GitHub repository</a>.</p>
     </header>
     <ul>
       <li>
-        <a href="TriangleShape/index.html">
+        <a class="vibe" href="TriangleShape/index.html">
           <div class="vibe-title">Triangle Shape Space</div>
           <div class="vibe-tagline">Explore the topology of triangle shapes on a sphere.</div>
         </a>
       </li>
       <li>
-        <a href="SlidingPuzzleChess/index.html">
+        <a class="vibe" href="SlidingPuzzleChess/index.html">
           <div class="vibe-title">Sliding Puzzle Chess</div>
           <div class="vibe-tagline">Chess variant inspired by that XKCD comic.</div>
         </a>
       </li>
       <li>
-        <a href="ReflectingAnts/index.html">
+        <a class="vibe" href="ReflectingAnts/index.html">
           <div class="vibe-title">Reflecting Ants</div>
           <div class="vibe-tagline">Simulate perfectly elastic ants bouncing inside a mirrored square to reveal
             intricate trails.</div>
         </a>
       </li>
       <li>
-        <a href="SwapPuzzle/index.html">
+        <a class="vibe" href="SwapPuzzle/index.html">
           <div class="vibe-title">Swap Puzzle</div>
           <div class="vibe-tagline">Rebuild the scrambled image by swapping whole rows and columns across expanding
             grids.</div>
