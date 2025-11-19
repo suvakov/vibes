@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Triangle Shape Space</title>
+    <link rel="stylesheet" href="style.css" />
+    <!-- Load Three.js and OrbitControls as global scripts for file:// compatibility -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+</head>
+
+<body>
+    <main>
+        <a href="../index.html" class="back-link">← Back to Vibes</a>
+
+        <header>
+            <h1>Triangle Shape Space</h1>
+            <div class="subtitle">The hidden topology of the simplest polygon</div>
+        </header>
+
+        <article>
+            <p>
+                What is the topological space of shapes of triangles? It sounds like a question one might encounter in
+                elementary school geometry, yet even in university courses, we rarely discuss the "shape space" of this
+                simple object.
+            </p>
+
+            <h2>The Concept of Shape Space</h2>
+            <p>
+                A topological space is a mathematical set with a structure that allows for the definition of continuous
+                deformation. When we talk about the "shape space" of a triangle, we are asking: if we continuously
+                change the shape of a triangle by small amounts, what kind of surface or object do we trace out?
+            </p>
+            <p>
+                Consider a triangle. It is defined by 3 vertices, or 3 side lengths, or 2 angles and a size. However,
+                for "shape," size does not matter. A large equilateral triangle has the same shape as a small one.
+                Similarly, position and rotation in space do not matter. We are interested only in the intrinsic shape.
+            </p>
+            <p>
+                Since a triangle is well-defined by 3 parameters (e.g., side lengths) and one is ruled out by the size
+                (scaling), the space of all possible triangle shapes is <strong>2-dimensional</strong>. It forms a
+                surface. But what surface? A plane? A cylinder?
+            </p>
+
+            <h2>Jacobi Coordinates</h2>
+            <p>
+                To visualize this, we can use a coordinate system often used in the three-body problem, known as
+                <strong>Jacobi coordinates</strong>.
+                Let the positions of the three vertices be vectors $\mathbf{r}_1, \mathbf{r}_2, \mathbf{r}_3$. We define
+                two Jacobi vectors:
+            </p>
+            <p>
+                <code>ρ₁ = (r₂ - r₁) / √2</code><br>
+                <code>ρ₂ = (2r₃ - r₁ - r₂) / √6</code>
+            </p>
+            <p>
+                These vectors describe the relative positions. $\mathbf{\rho}_1$ is the vector between the first two
+                vertices (scaled), and $\mathbf{\rho}_2$ is the vector from the midpoint of the first two to the third
+                (scaled).
+            </p>
+            <p>
+                From these, we can construct 3 coordinates $(w_1, w_2, w_3)$ that define the shape:
+            </p>
+            <ul>
+                <li><code>w₁ = |ρ₁|² - |ρ₂|²</code></li>
+                <li><code>w₂ = 2(ρ₁ · ρ₂)</code></li>
+                <li><code>w₃ = 2(ρ₁ × ρ₂)</code> (scalar cross product in 2D)</li>
+            </ul>
+            <p>
+                Remarkably, these coordinates satisfy <code>w₁² + w₂² + w₃² = I²</code>, where $I$ is related to the
+                moment of inertia (size).
+            </p>
+            <p>
+                To look at the shape alone, we normalize these coordinates by the size $I = \sqrt{w_1^2 + w_2^2 +
+                w_3^2}$. This gives us the coordinates on the <strong>Unit Sphere</strong>:
+            </p>
+            <p>
+                $$ x = \frac{w_1}{I}, \quad y = \frac{w_2}{I}, \quad z = \frac{w_3}{I} $$
+            </p>
+            <p>
+                These satisfy $x^2 + y^2 + z^2 = 1$.
+            </p>
+
+            <h2>The Shape Sphere</h2>
+            <p>
+                The topology of triangle shapes is a sphere! Every point on this sphere corresponds to a unique triangle
+                shape.
+            </p>
+            <ul>
+                <li><strong>Poles (North/South):</strong> Equilateral triangles. (One orientation is North, the mirror
+                    image is South).</li>
+                <li><strong>Equator:</strong> Collinear triangles (degenerate, area = 0).</li>
+                <li><strong>Collision Points:</strong> Three specific points on the equator where two vertices coincide
+                    (binary collisions).</li>
+                <li><strong>Great Circles:</strong> Lines of isosceles triangles connecting the poles to the collision
+                    points.</li>
+                <li><strong>Small Circles:</strong> Three circles connecting collision points representing right
+                    triangles.</li>
+            </ul>
+
+            <div class="applet-container">
+                <div class="canvas-wrapper">
+                    <h3>Shape Sphere (3D)</h3>
+                    <canvas id="sphereCanvas"></canvas>
+                </div>
+                <div class="right-panel"
+                    style="display: flex; flex-direction: column; height: 100%; background: var(--border-color); gap: 1px;">
+                    <div class="canvas-wrapper" style="flex: 1; position: relative;">
+                        <h3>Projection (Top View)</h3>
+                        <button id="hemisphereBtn"
+                            style="position: absolute; top: 10px; right: 10px; z-index: 20; padding: 4px 8px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: white; border-radius: 4px; cursor: pointer; font-size: 0.8rem;">North</button>
+                        <canvas id="projectionCanvas"></canvas>
+                    </div>
+                    <div class="canvas-wrapper" style="flex: 1;">
+                        <h3>Triangle View</h3>
+                        <canvas id="triangleCanvas"></canvas>
+                    </div>
+                </div>
+            </div>
+            <div class="controls">
+                Interact with the sphere or the projection (use button to switch hemispheres).
+            </div>
+
+            <p>
+                In the visualization above:
+                <br>• The <strong>Sphere</strong> shows the manifold of all shapes.
+                <br>• The <strong>Red Points</strong> on the equator are collision points (2 vertices same).
+                <br>• The <strong>Cyan Lines</strong> connecting poles are isosceles triangles.
+                <br>• The <strong>Yellow Circles</strong> are right triangles.
+                <br>• The <strong>Poles</strong> are equilateral triangles.
+            </p>
+        </article>
+    </main>
+
+    <!-- MathJax for formulas -->
+    <script>
+        MathJax = {
+            tex: {
+                inlineMath: [['$', '$'], ['\\(', '\\)']]
+            }
+        };
+    </script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+    <script src="script.js"></script>
+</body>
+
+</html>

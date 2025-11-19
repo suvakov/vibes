@@ -25,6 +25,7 @@
     }
 
     header {
+      margin-top: 3rem;
       padding: 1rem clamp(1rem, 5vw, 3rem);
       display: flex;
       flex-wrap: wrap;
@@ -76,6 +77,23 @@
 
     button:active {
       transform: translateY(0);
+    }
+
+    .back-link {
+      position: absolute;
+      top: 1rem;
+      left: 1rem;
+      display: inline-block;
+      padding: 0.4rem 0.8rem;
+      color: rgba(255, 255, 255, 0.6);
+      text-decoration: none;
+      font-size: 0.9rem;
+      transition: color 0.2s;
+      z-index: 100;
+    }
+
+    .back-link:hover {
+      color: #fff;
     }
 
     main {
@@ -237,6 +255,7 @@
 </head>
 
 <body>
+  <a href="../index.html" class="back-link">← Back to Vibes</a>
   <header>
     <div>
       <button id="stepBtn">Step</button>

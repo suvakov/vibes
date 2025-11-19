@@ -158,10 +158,28 @@
         #reset-button:active {
             transform: scale(0.98);
         }
+
+        .back-link {
+            position: absolute;
+            top: 1rem;
+            left: 1rem;
+            display: inline-block;
+            padding: 0.4rem 0.8rem;
+            color: rgba(240, 240, 240, 0.6);
+            text-decoration: none;
+            font-size: 0.9rem;
+            transition: color 0.2s;
+            z-index: 100;
+        }
+
+        .back-link:hover {
+            color: #f0f0f0;
+        }
     </style>
 </head>
 
 <body>
+    <a href="../index.html" class="back-link">← Back to Vibes</a>
 
     <h1>Sliding Puzzle Chess</h1>
     <h2>Based on <a href="https://xkcd.com/3139/">XKCD 3139</a></h2>
