@@ -1,0 +1,314 @@
+:root {
+    color-scheme: light dark;
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    --bg-color: #111119;
+    --text-color: rgba(255, 255, 255, 0.9);
+    --text-muted: rgba(255, 255, 255, 0.6);
+    --accent: #646cff;
+    --panel-bg: rgba(22, 25, 34, 0.8);
+    --border-color: rgba(255, 255, 255, 0.1);
+}
+
+body {
+    margin: 0;
+    overflow: hidden;
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    font-family: 'Inter', sans-serif;
+}
+
+#canvas-container {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1;
+}
+
+.back-link {
+    position: absolute;
+    top: 1rem;
+    left: 1rem;
+    display: inline-block;
+    padding: 0.4rem 0.8rem;
+    color: var(--text-muted);
+    text-decoration: none;
+    font-size: 0.9rem;
+    transition: color 0.2s;
+    z-index: 100;
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 4px;
+    backdrop-filter: blur(4px);
+}
+
+.back-link:hover {
+    color: #fff;
+}
+
+#ui-container {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    width: 300px;
+    max-height: 90vh;
+    overflow-y: auto;
+    background: var(--panel-bg);
+    backdrop-filter: blur(12px);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 1.5rem;
+    z-index: 100;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    transition: transform 0.3s ease, opacity 0.3s ease;
+}
+
+#ui-container.hidden {
+    transform: translateX(120%);
+    opacity: 0;
+    pointer-events: none;
+}
+
+.ui-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 0.5rem;
+}
+
+.header-controls {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.icon-btn {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid var(--border-color);
+    color: var(--text-color);
+    border-radius: 6px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s;
+    padding: 0.5rem;
+    font-size: 1.2rem;
+    width: auto;
+    margin: 0;
+}
+
+.icon-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.icon-btn.small {
+    padding: 0.2rem 0.5rem;
+    font-size: 0.9rem;
+    height: 24px;
+    width: 24px;
+}
+
+#ui-toggle {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    z-index: 99;
+    padding: 0.8rem;
+    background: var(--panel-bg);
+    backdrop-filter: blur(12px);
+}
+
+/* Modal Styles */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 200;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(4px);
+}
+
+.modal-content {
+    background-color: #1a1a24;
+    margin: 10% auto;
+    padding: 2rem;
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    width: 80%;
+    max-width: 600px;
+    color: var(--text-color);
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+    position: relative;
+}
+
+.close-modal {
+    color: var(--text-muted);
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+    cursor: pointer;
+    line-height: 1;
+}
+
+.close-modal:hover,
+.close-modal:focus {
+    color: white;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.modal-content h2 {
+    margin-top: 0;
+    color: var(--accent);
+}
+
+.modal-content h3 {
+    margin-top: 1.5rem;
+    font-size: 1.1rem;
+    color: white;
+}
+
+.modal-content ul {
+    padding-left: 1.5rem;
+    color: var(--text-muted);
+    line-height: 1.6;
+}
+
+.modal-content p {
+    line-height: 1.6;
+    color: var(--text-muted);
+}
+
+/* Existing styles... */
+h1 {
+    font-size: 1.2rem;
+    margin: 0;
+    font-weight: 600;
+    flex: 1;
+}
+
+.subtitle {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    margin-bottom: 1.5rem;
+    line-height: 1.4;
+}
+
+.control-group {
+    margin-bottom: 1rem;
+}
+
+label {
+    display: block;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    margin-bottom: 0.4rem;
+}
+
+input[type="number"],
+input[type="range"] {
+    width: 100%;
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid var(--border-color);
+    color: white;
+    padding: 0.4rem;
+    border-radius: 4px;
+    font-family: inherit;
+    box-sizing: border-box;
+    /* Fix width issue */
+}
+
+button {
+    width: 100%;
+    padding: 0.6rem;
+    background: var(--accent);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s;
+    margin-top: 0.5rem;
+}
+
+button:hover {
+    background: #747bff;
+}
+
+button.secondary {
+    background: rgba(255, 255, 255, 0.1);
+    margin-top: 0.5rem;
+}
+
+button.secondary:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.stats {
+    margin-top: 1.5rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--border-color);
+    font-size: 0.85rem;
+    color: var(--text-muted);
+}
+
+.stat-row {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 0.4rem;
+}
+
+.stat-value {
+    color: white;
+    font-family: monospace;
+}
+
+#edge-list-container {
+    margin-top: 1.5rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--border-color);
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+#edge-list-container h3 {
+    font-size: 0.9rem;
+    margin: 0 0 0.5rem 0;
+    color: var(--text-muted);
+}
+
+.edge-item {
+    display: flex;
+    align-items: center;
+    margin-bottom: 0.4rem;
+    font-size: 0.85rem;
+    color: var(--text-color);
+}
+
+.edge-color {
+    width: 12px;
+    height: 12px;
+    border-radius: 2px;
+    margin-right: 8px;
+    display: inline-block;
+}
+
+.edge-item input {
+    margin-right: 8px;
+    width: auto;
+}
+
+.edge-info {
+    flex: 1;
+    display: flex;
+    justify-content: space-between;
+}
+
+.edge-len {
+    font-family: monospace;
+    color: var(--text-muted);
+}

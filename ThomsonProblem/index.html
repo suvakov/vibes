@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Thomson Problem - Minimum Energy on a Sphere</title>
+    <link rel="stylesheet" href="style.css">
+
+    <!-- Load Three.js and dependencies -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/math/ConvexHull.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/geometries/ConvexGeometry.js"></script>
+</head>
+
+<body>
+    <a href="../index.html" class="back-link">← Back to Vibes</a>
+
+    <div id="canvas-container"></div>
+
+    <button id="ui-toggle" class="icon-btn" aria-label="Open Menu">
+        ☰
+    </button>
+
+    <div id="ui-container">
+        <div class="ui-header">
+            <h1>Thomson Problem</h1>
+            <div class="header-controls">
+                <button id="info-btn" class="icon-btn small" aria-label="Information">i</button>
+                <button id="minimize-btn" class="icon-btn small" aria-label="Minimize">_</button>
+            </div>
+        </div>
+        <div class="subtitle">
+            Find the minimum energy configuration of N electrons on a unit sphere.
+        </div>
+
+        <div class="control-group">
+            <label for="n-input">Number of Electrons (N)</label>
+            <input type="number" id="n-input" value="14" min="2" max="200">
+        </div>
+
+        <div class="control-group">
+            <label for="pop-input">Population Size</label>
+            <input type="number" id="pop-input" value="8" min="1" max="100">
+        </div>
+
+        <div class="control-group">
+            <label for="mut-input">Mutation Rate (0-1)</label>
+            <input type="number" id="mut-input" value="0.1" min="0" max="1" step="0.05">
+        </div>
+
+        <div class="control-group">
+            <label for="lr-input">Learning Rate</label>
+            <input type="number" id="lr-input" value="0.01" min="0.001" max="1" step="0.001">
+        </div>
+
+        <div class="control-group">
+            <label for="conv-input">Convergence Threshold (1e-X)</label>
+            <input type="number" id="conv-input" value="8" min="1" max="15" step="1">
+        </div>
+
+        <div class="control-group">
+            <label for="width-input">Line Width</label>
+            <input type="range" id="width-input" value="8" min="1" max="20" step="1">
+        </div>
+
+        <div class="control-group">
+            <label for="opacity-input">Sphere Opacity</label>
+            <input type="range" id="opacity-input" value="0.4" min="0" max="1" step="0.05">
+        </div>
+
+        <div class="control-group">
+            <button id="reset-btn">Restart</button>
+        </div>
+
+        <div class="stats">
+            <div class="stat-row">
+                <span>Energy ($U_t$):</span>
+                <span id="energy-display" class="stat-value">0.000000</span>
+            </div>
+            <div class="stat-row">
+                <span>Status:</span>
+                <span id="status-display" class="stat-value">Idle</span>
+            </div>
+        </div>
+
+        <div id="edge-list-container" style="display: none;">
+            <h3>Edge Analysis</h3>
+            <div id="edge-list"></div>
+        </div>
+    </div>
+
+    <div id="info-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal">&times;</span>
+            <h2>About Thomson Problem</h2>
+            <p>The <strong>Thomson Problem</strong> asks for the minimum electrostatic potential energy configuration of
+                $N$ electrons constrained to the surface of a unit sphere.</p>
+
+            <h3>Simulation Logic</h3>
+            <p>This app uses a hybrid approach:</p>
+            <ul>
+                <li><strong>Genetic Algorithm (GA)</strong>: Explores the global search space to avoid local minima. It
+                    uses population, crossover (random plane cut), and mutation.</li>
+                <li><strong>Gradient Descent (GD)</strong>: Locally refines each configuration to the nearest energy
+                    minimum.</li>
+            </ul>
+
+            <h3>Parameters</h3>
+            <ul>
+                <li><strong>N</strong>: Number of electrons.</li>
+                <li><strong>Population</strong>: Number of configurations in the GA.</li>
+                <li><strong>Mutation Rate</strong>: Probability of random perturbation.</li>
+                <li><strong>Learning Rate</strong>: Step size for Gradient Descent.</li>
+                <li><strong>Convergence</strong>: Precision threshold for GD stopping.</li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- MathJax for formulas -->
+    <script>
+        MathJax = {
+            tex: {
+                inlineMath: [['$', '$'], ['\\(', '\\)']]
+            }
+        };
+    </script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+    <script src="script.js"></script>
+</body>
+
+</html>
