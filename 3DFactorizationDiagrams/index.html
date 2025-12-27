@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D Factorization Diagrams</title>
+    <link rel="stylesheet" href="style.css">
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+                "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+            }
+        }
+    </script>
+</head>
+
+<body>
+    <a href="../index.html" class="back-link">← Back to Vibes</a>
+
+    <div id="ui-container">
+        <div id="mobile-toggle" class="mobile-toggle">▼</div>
+        <h1>Factorization</h1>
+        <div class="control-group">
+            <label for="number-input">Number (N)</label>
+            <input type="number" id="number-input" value="42" min="2" max="100000">
+        </div>
+        <div class="control-group">
+            <label for="factor-order">Ordering</label>
+            <select id="factor-order">
+                <option value="desc">Descending (Large -> Small)</option>
+                <option value="asc">Ascending (Small -> Large)</option>
+            </select>
+        </div>
+        <div class="control-group">
+            <label for="color-palette">Color Palette</label>
+            <select id="color-palette">
+                <option value="rainbow">Rainbow (Default)</option>
+                <option value="cool">Cool (Blue/Purple)</option>
+                <option value="warm">Warm (Red/Orange)</option>
+                <option value="pastel">Pastel</option>
+            </select>
+        </div>
+        <div class="control-group">
+            <label for="leaf-style">Outer Material</label>
+            <select id="leaf-style">
+                <option value="gold">Gold (Metallic)</option>
+                <option value="silver">Silver (Metallic)</option>
+                <option value="blue">Blue (Matte)</option>
+                <option value="red">Red (Glowing)</option>
+            </select>
+        </div>
+
+
+        <!-- Legend will be populated by JS -->
+        <div id="legend-container"></div>
+
+        <div class="collapsible-header">Advanced Controls</div>
+        <div class="collapsible-content">
+            <div class="control-group">
+                <label for="time-step">Time Step (dt)</label>
+                <input type="range" id="time-step" min="0.01" max="5.0" step="0.01" value="0.2">
+                <span id="time-step-val">0.2</span>
+            </div>
+            <div class="control-group">
+                <label for="radius-factor">Radius Factor (l)</label>
+                <input type="range" id="radius-factor" min="0.1" max="1.5" step="0.05" value="0.9">
+                <span id="radius-factor-val">0.9</span>
+            </div>
+            <div class="control-group">
+                <label for="repulsion-strength">Repulsion</label>
+                <input type="range" id="repulsion-strength" min="0.01" max="2.0" step="0.01" value="0.1">
+                <span id="repulsion-strength-val">0.1</span>
+            </div>
+            <div class="control-group">
+                <label for="opacity-levels">Inner Opacity</label>
+                <input type="range" id="opacity-levels" min="0" max="1" step="0.05" value="1">
+                <span id="opacity-levels-val">1</span>
+            </div>
+            <div class="control-group">
+                <label>
+                    <input type="checkbox" id="show-wireframes"> Show Wireframes
+                </label>
+            </div>
+        </div>
+        <button id="update-btn">Restart</button>
+    </div>
+
+    <script type="module" src="script.js"></script>
+</body>
+
+</html>
