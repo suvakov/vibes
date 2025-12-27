@@ -19,72 +19,82 @@
 <body>
     <a href="../index.html" class="back-link">← Back to Vibes</a>
 
-    <div id="ui-container">
-        <div id="mobile-toggle" class="mobile-toggle">▼</div>
-        <h1>Factorization</h1>
-        <div class="control-group">
-            <label for="number-input">Number (N)</label>
-            <input type="number" id="number-input" value="42" min="2" max="100000">
-        </div>
-        <div class="control-group">
-            <label for="factor-order">Ordering</label>
-            <select id="factor-order">
-                <option value="desc">Descending (Large -> Small)</option>
-                <option value="asc">Ascending (Small -> Large)</option>
-            </select>
-        </div>
-        <div class="control-group">
-            <label for="color-palette">Color Palette</label>
-            <select id="color-palette">
-                <option value="rainbow">Rainbow (Default)</option>
-                <option value="cool">Cool (Blue/Purple)</option>
-                <option value="warm">Warm (Red/Orange)</option>
-                <option value="pastel">Pastel</option>
-            </select>
-        </div>
-        <div class="control-group">
-            <label for="leaf-style">Outer Material</label>
-            <select id="leaf-style">
-                <option value="gold">Gold (Metallic)</option>
-                <option value="silver">Silver (Metallic)</option>
-                <option value="blue">Blue (Matte)</option>
-                <option value="red">Red (Glowing)</option>
-            </select>
-        </div>
+    <div id="ui-container" class="hidden">
+        <div id="mobile-toggle" class="mobile-toggle collapsed">▼</div>
+        <div class="ui-content-wrapper">
+            <h1>Factorization</h1>
+            <div class="control-group">
+                <label for="number-input">Number (N)</label>
+                <input type="number" id="number-input" value="42" min="2" max="100000">
+            </div>
+            <div class="control-group">
+                <label for="factor-order">Ordering</label>
+                <select id="factor-order">
+                    <option value="desc">Descending (Large -> Small)</option>
+                    <option value="asc">Ascending (Small -> Large)</option>
+                </select>
+            </div>
+            <div class="control-group">
+                <label for="color-palette">Color Palette</label>
+                <select id="color-palette">
+                    <option value="rainbow">Rainbow (Default)</option>
+                    <option value="cool">Cool (Blue/Purple)</option>
+                    <option value="warm">Warm (Red/Orange)</option>
+                    <option value="pastel">Pastel</option>
+                </select>
+            </div>
+            <div class="control-group">
+                <label for="leaf-style">Outer Material</label>
+                <select id="leaf-style">
+                    <option value="gold">Gold (Metallic)</option>
+                    <option value="silver">Silver (Metallic)</option>
+                    <option value="blue">Blue (Matte)</option>
+                    <option value="red">Red (Glowing)</option>
+                </select>
+            </div>
 
 
-        <!-- Legend will be populated by JS -->
-        <div id="legend-container"></div>
+            <!-- Legend will be populated by JS -->
+            <div id="legend-container"></div>
 
-        <div class="collapsible-header">Advanced Controls</div>
-        <div class="collapsible-content">
-            <div class="control-group">
-                <label for="time-step">Time Step (dt)</label>
-                <input type="range" id="time-step" min="0.01" max="5.0" step="0.01" value="0.2">
-                <span id="time-step-val">0.2</span>
+            <div class="collapsible-header">Advanced Controls</div>
+            <div class="collapsible-content">
+                <div class="control-group">
+                    <label for="time-step">Time Step (dt)</label>
+                    <input type="range" id="time-step" min="0.01" max="5.0" step="0.01" value="0.2">
+                    <span id="time-step-val">0.2</span>
+                </div>
+                <div class="control-group">
+                    <label for="radius-factor">Radius Factor (l)</label>
+                    <input type="range" id="radius-factor" min="0.1" max="1.5" step="0.05" value="0.9">
+                    <span id="radius-factor-val">0.9</span>
+                </div>
+                <div class="control-group">
+                    <label for="repulsion-strength">Repulsion</label>
+                    <input type="range" id="repulsion-strength" min="0.01" max="2.0" step="0.01" value="0.1">
+                    <span id="repulsion-strength-val">0.1</span>
+                </div>
+                <div class="control-group">
+                    <label for="opacity-levels">Inner Opacity</label>
+                    <input type="range" id="opacity-levels" min="0" max="1" step="0.05" value="1">
+                    <span id="opacity-levels-val">1</span>
+                </div>
+                <div class="control-group">
+                    <label>
+                        <input type="checkbox" id="show-wireframes"> Show Wireframes
+                    </label>
+                </div>
             </div>
-            <div class="control-group">
-                <label for="radius-factor">Radius Factor (l)</label>
-                <input type="range" id="radius-factor" min="0.1" max="1.5" step="0.05" value="0.9">
-                <span id="radius-factor-val">0.9</span>
-            </div>
-            <div class="control-group">
-                <label for="repulsion-strength">Repulsion</label>
-                <input type="range" id="repulsion-strength" min="0.01" max="2.0" step="0.01" value="0.1">
-                <span id="repulsion-strength-val">0.1</span>
-            </div>
-            <div class="control-group">
-                <label for="opacity-levels">Inner Opacity</label>
-                <input type="range" id="opacity-levels" min="0" max="1" step="0.05" value="1">
-                <span id="opacity-levels-val">1</span>
-            </div>
-            <div class="control-group">
-                <label>
-                    <input type="checkbox" id="show-wireframes"> Show Wireframes
-                </label>
-            </div>
+            <button id="update-btn">Restart</button>
         </div>
-        <button id="update-btn">Restart</button>
+    </div>
+
+    <div id="mobile-overlay">
+        <div id="mobile-n-display">N = 42</div>
+        <div class="mobile-buttons">
+            <button id="btn-minus">-</button>
+            <button id="btn-plus">+</button>
+        </div>
     </div>
 
     <script type="module" src="script.js"></script>

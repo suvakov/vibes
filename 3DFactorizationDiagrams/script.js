@@ -433,6 +433,10 @@ function regenerate() {
     config.N = n;
     config.order = document.getElementById('factor-order').value;
 
+    // Update mobile display
+    const mobDisplay = document.getElementById('mobile-n-display');
+    if (mobDisplay) mobDisplay.textContent = `N = ${n}`;
+
     const factors = getPrimeFactors(n);
     const sortedFactors = sortFactors(factors, config.order);
     currentFactors = sortedFactors; // Store for legend
@@ -461,7 +465,32 @@ function initUI() {
         regenerate();
     });
 
+    // Mobile buttons
+    const numInput = document.getElementById('number-input');
+    const minVal = 2;
+    const maxVal = 100000;
 
+    const btnMinus = document.getElementById('btn-minus');
+    if (btnMinus) {
+        btnMinus.addEventListener('click', () => {
+            let val = parseInt(numInput.value) || 2;
+            if (val > minVal) {
+                numInput.value = val - 1;
+                regenerate();
+            }
+        });
+    }
+
+    const btnPlus = document.getElementById('btn-plus');
+    if (btnPlus) {
+        btnPlus.addEventListener('click', () => {
+            let val = parseInt(numInput.value) || 2;
+            if (val < maxVal) {
+                numInput.value = val + 1;
+                regenerate();
+            }
+        });
+    }
 
     document.getElementById('update-btn').addEventListener('click', regenerate);
 
