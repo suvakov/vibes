@@ -280,6 +280,13 @@ function initScene() {
 
     controls = new OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
+    controls.dampingFactor = 0.01;
+    controls.autoRotate = true;
+    controls.autoRotateSpeed = 2.0;
+
+    controls.addEventListener('start', function () {
+        controls.autoRotate = false;
+    });
 
     window.addEventListener('resize', onResize);
 }
@@ -448,6 +455,7 @@ function regenerate() {
 
     // Reset camera focus roughly
     controls.target.set(0, 0, 0);
+    controls.autoRotate = true;
 }
 
 function initUI() {
