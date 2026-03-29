@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Alzheimer's Mortality by Occupation (2020-2022)</title>
+    <!-- Modern Google Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Plotly.js for advanced interactive charting -->
+    <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <a href="../index.html" class="back-link">← Back to Vibes</a>
+    <header class="app-header">
+        <div class="header-content">
+            <h1>Alzheimer's Mortality by Occupation</h1>
+            <p class="inspiration-note">This work is a partial reconstruction of results and inspired by <a href="https://doi.org/10.1136/bmj-2024-082194" target="_blank" rel="noopener">Alzheimer’s disease mortality among taxi and ambulance drivers: population based cross sectional study</a> (BMJ 2024; 387 doi: 10.1136/bmj-2024-082194). View the full study <a href="https://www.bmj.com/content/387/bmj-2024-082194" target="_blank" rel="noopener">on BMJ</a>.</p>
+            <p>Analysis of 2020-2022 US Mortality Records showing the impact of Alzheimer's across different occupations.</p>
+        </div>
+        <div class="global-stats-container" id="global-stats-container">
+            <!-- Global Stats injected here by JS -->
+        </div>
+    </header>
+
+    <main class="app-main">
+        <div class="plots-grid">
+            <section class="plot-section">
+                <div class="plot-header">
+                    <h2>Alzheimer's Proportion</h2>
+                    <p>Average Age of Death vs. Percentage of Deaths Attributed to Alzheimer's per Occupation.</p>
+                    <div class="control-group">
+                        <label for="threshold-slider">Minimum Alzheimer's Deaths to Plot: <span id="threshold-val" class="accent-text">10</span></label>
+                        <input type="range" id="threshold-slider" min="1" max="2500" value="10" class="slider">
+                    </div>
+                    <div class="control-group">
+                        <label for="total-threshold-slider">Minimum Total Group Size to Plot: <span id="total-threshold-val" class="accent-text">1000</span></label>
+                        <input type="range" id="total-threshold-slider" min="1" max="10000" value="1000" class="slider">
+                    </div>
+                    <div class="control-group">
+                        <label for="search-plot-proportion">Highlight Occupation:</label>
+                        <select id="search-plot-proportion" class="occ-search-select select-styled">
+                            <option value="">-- None --</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="plot-container elevated" id="plot-proportion"></div>
+            </section>
+
+            <section class="plot-section">
+                <div class="plot-header">
+                    <h2>Alzheimer's Proportion vs Overall Age</h2>
+                    <p>Average Overall Age of Death vs. Percentage of Deaths Attributed to Alzheimer's per Occupation.</p>
+                    <div class="control-group">
+                        <label for="overall-threshold-slider">Minimum Alzheimer's Deaths to Plot: <span id="overall-threshold-val" class="accent-text">10</span></label>
+                        <input type="range" id="overall-threshold-slider" min="1" max="2500" value="10" class="slider">
+                    </div>
+                    <div class="control-group">
+                        <label for="overall-total-threshold-slider">Minimum Total Group Size to Plot: <span id="overall-total-threshold-val" class="accent-text">1000</span></label>
+                        <input type="range" id="overall-total-threshold-slider" min="1" max="10000" value="1000" class="slider">
+                    </div>
+                    <div class="control-group">
+                        <label for="search-plot-overall">Highlight Occupation:</label>
+                        <select id="search-plot-overall" class="occ-search-select select-styled">
+                            <option value="">-- None --</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="plot-container elevated" id="plot-overall-proportion"></div>
+            </section>
+
+            <section class="plot-section">
+                <div class="plot-header">
+                    <h2>Alzheimer's Mortality Rate by Age</h2>
+                    <p>Percentage of total deaths attributed to Alzheimer's disease within each specific age group.</p>
+                </div>
+                <div class="plot-container elevated" id="plot-ratio"></div>
+            </section>
+
+            <section class="plot-section">
+                <div class="plot-header">
+                    <h2>Alzheimer's Mortality Rate by Age (M vs F)</h2>
+                    <p>Percentage of total deaths attributed to Alzheimer's internally grouped natively by Sex.</p>
+                </div>
+                <div class="plot-container elevated" id="plot-ratio-sex"></div>
+            </section>
+
+            <section class="plot-section">
+                <div class="plot-header">
+                    <h2>Alzheimer's Mortality Rate by Age (By Race)</h2>
+                    <p>Percentage of total deaths attributed to Alzheimer's mapped natively grouping isolated racial statistics.</p>
+                </div>
+                <div class="plot-container elevated" id="plot-ratio-race"></div>
+            </section>
+
+            <section class="plot-section">
+                <div class="plot-header">
+                    <h2>Alzheimer's Mortality Rate by Age (By Marital Status)</h2>
+                    <p>Percentage of total deaths attributed to Alzheimer's grouped mapped smoothly globally mapping separated specific marital parameters.</p>
+                </div>
+                <div class="plot-container elevated" id="plot-ratio-marital"></div>
+            </section>
+
+            <section class="plot-section">
+                <div class="plot-header">
+                    <h2>Alzheimer's Mortality Rate by Age (By Education Level)</h2>
+                    <p>Percentage of total deaths attributed to Alzheimer's plotting categorized accurately by highest educational parameters.</p>
+                </div>
+                <div class="plot-container elevated" id="plot-ratio-edu"></div>
+            </section>
+
+            <section class="plot-section">
+                <div class="plot-header">
+                    <h2>Overall Age Distribution</h2>
+                    <p>Frequency of deaths attributed to Alzheimer's across all recorded ages.</p>
+                </div>
+                <div class="plot-container elevated" id="plot-distribution"></div>
+            </section>
+
+            <section class="plot-section">
+                <div class="plot-header">
+                    <h2>Expected vs Observed Alzheimer's Proportion (Age Adjusted)</h2>
+                    <p>Expected Percentage (Age-adjusted demographic baseline) vs Observed Percentage of Alzheimer's Deaths per Occupation.</p>
+                    <div class="control-group">
+                        <label for="expected-threshold-slider">Minimum Alzheimer's Deaths to Plot: <span id="expected-threshold-val" class="accent-text">10</span></label>
+                        <input type="range" id="expected-threshold-slider" min="1" max="2500" value="10" class="slider">
+                    </div>
+                    <div class="control-group">
+                        <label for="expected-total-threshold-slider">Minimum Total Group Size to Plot: <span id="expected-total-threshold-val" class="accent-text">1000</span></label>
+                        <input type="range" id="expected-total-threshold-slider" min="1" max="10000" value="1000" class="slider">
+                    </div>
+                    <div class="control-group">
+                        <label for="search-plot-expected">Highlight Occupation:</label>
+                        <select id="search-plot-expected" class="occ-search-select select-styled">
+                            <option value="">-- None --</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="dual-panel-wrapper">
+                    <div class="table-container elevated" id="table-expected-observed"></div>
+                    <div class="plot-container elevated" id="plot-expected-observed"></div>
+                </div>
+            </section>
+
+            <section class="plot-section">
+                <div class="plot-header">
+                    <h2>Expected vs Observed Alzheimer's Proportion (Age, Sex, & Race Adjusted)</h2>
+                    <p>Expected Percentage (Multi-variate age, sex, and race baseline) vs Observed Percentage of Alzheimer's.</p>
+                    <div class="control-group">
+                        <label for="expected-asr-threshold-slider">Minimum Alzheimer's Deaths to Plot: <span id="expected-asr-threshold-val" class="accent-text">10</span></label>
+                        <input type="range" id="expected-asr-threshold-slider" min="1" max="2500" value="10" class="slider">
+                    </div>
+                    <div class="control-group">
+                        <label for="expected-asr-total-threshold-slider">Minimum Total Group Size to Plot: <span id="expected-asr-total-threshold-val" class="accent-text">1000</span></label>
+                        <input type="range" id="expected-asr-total-threshold-slider" min="1" max="10000" value="1000" class="slider">
+                    </div>
+                    <div class="control-group">
+                        <label for="search-plot-expected-asr">Highlight Occupation:</label>
+                        <select id="search-plot-expected-asr" class="occ-search-select select-styled">
+                            <option value="">-- None --</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="dual-panel-wrapper">
+                    <div class="table-container elevated" id="table-expected-observed-asr"></div>
+                    <div class="plot-container elevated" id="plot-expected-observed-asr"></div>
+                </div>
+            </section>
+
+            <section class="plot-section">
+                <div class="plot-header">
+                    <h2>Expected vs Observed Alzheimer's Proportion (Age, Sex, Race, Marital, & Education Adjusted)</h2>
+                    <p>Expected Percentage (Multi-variate baseline incorporating Marital Status and Education) vs Observed Proportion.</p>
+                    <div class="control-group">
+                        <label for="expected-asrme-threshold-slider">Minimum Alzheimer's Deaths to Plot: <span id="expected-asrme-threshold-val" class="accent-text">10</span></label>
+                        <input type="range" id="expected-asrme-threshold-slider" min="1" max="2500" value="10" class="slider">
+                    </div>
+                    <div class="control-group">
+                        <label for="expected-asrme-total-threshold-slider">Minimum Total Group Size to Plot: <span id="expected-asrme-total-threshold-val" class="accent-text">1000</span></label>
+                        <input type="range" id="expected-asrme-total-threshold-slider" min="1" max="10000" value="1000" class="slider">
+                    </div>
+                    <div class="control-group">
+                        <label for="search-plot-expected-asrme">Highlight Occupation:</label>
+                        <select id="search-plot-expected-asrme" class="occ-search-select select-styled">
+                            <option value="">-- None --</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="dual-panel-wrapper">
+                    <div class="table-container elevated" id="table-expected-observed-asrme"></div>
+                    <div class="plot-container elevated" id="plot-expected-observed-asrme"></div>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <footer class="app-footer">
+        <p>Data provided by the CDC National Vital Statistics System (2020-2022).</p>
+    </footer>
+
+    <script src="app.js"></script>
+</body>
+</html>
