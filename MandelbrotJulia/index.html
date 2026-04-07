@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Fractal Explorer — Mandelbrot &amp; Julia Sets</title>
+  <meta name="description" content="Interactive GPU-accelerated Mandelbrot and Julia set explorer with deep zoom, multiple palettes, and real-time Julia preview.">
+  <link rel="stylesheet" href="style.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🌀</text></svg>">
+</head>
+<body>
+  <canvas id="main-canvas"></canvas>
+
+  <div id="julia-container">
+    <canvas id="julia-canvas" width="480" height="480"></canvas>
+    <div class="julia-label">Julia Set Preview</div>
+  </div>
+
+  <div id="info-bar">
+    <span id="coordinates">c = 0.000 + 0.000i</span>
+    <span id="zoom-level">Zoom: 1.00</span>
+    <span id="precision-indicator">FP32</span>
+  </div>
+
+  <div id="options-panel">
+    <div class="panel-header">
+      <h2>⚙ Fractal Explorer</h2>
+      <button id="toggle-panel" title="Collapse panel">◀</button>
+    </div>
+    <div class="panel-content">
+      <!-- Fractal function -->
+      <div class="option-group">
+        <label>Function</label>
+        <select id="fractal-type">
+          <option value="0">z² + c</option>
+          <option value="1">z³ + c</option>
+          <option value="2">z⁴ + c</option>
+          <option value="5">z⁵ + c</option>
+          <option value="6">z⁶ + c</option>
+          <option value="11">z² + z + c</option>
+          <option value="12">z²·c + c</option>
+          <option value="3">Burning Ship</option>
+          <option value="9">Perp. Burning Ship</option>
+          <option value="4">Tricorn</option>
+          <option value="7">Celtic</option>
+          <option value="8">Buffalo</option>
+          <option value="10">sin(z)·c + c</option>
+        </select>
+        <div id="formula-display">z_{n+1} = z_n² + c</div>
+      </div>
+
+      <!-- Max iterations -->
+      <div class="option-group">
+        <label>Max Iterations: <span id="iter-display">200</span></label>
+        <input type="range" id="max-iter" min="50" max="10000" value="200" step="10">
+      </div>
+
+      <!-- Palette selection -->
+      <div class="option-group">
+        <label>Color Palette</label>
+        <select id="palette-select"></select>
+        <div id="palette-preview"></div>
+      </div>
+
+      <!-- Palette offset -->
+      <div class="option-group">
+        <label>Color Offset</label>
+        <input type="range" id="palette-offset" min="0" max="1" value="0" step="0.002">
+      </div>
+
+      <!-- Toggles -->
+      <div class="option-group toggles">
+        <label class="toggle-label">
+          <input type="checkbox" id="smooth-coloring" checked>
+          <span>Smooth Coloring</span>
+        </label>
+        <label class="toggle-label">
+          <input type="checkbox" id="auto-iter" checked>
+          <span>Auto Iterations</span>
+        </label>
+        <label class="toggle-label">
+          <input type="checkbox" id="cycle-colors">
+          <span>Cycle Colors</span>
+        </label>
+        <label class="toggle-label">
+          <input type="checkbox" id="show-crosshair">
+          <span>Show Axes</span>
+        </label>
+      </div>
+
+      <!-- Cycle speed -->
+      <div class="option-group" id="cycle-speed-group" style="display:none;">
+        <label>Cycle Speed</label>
+        <input type="range" id="cycle-speed" min="0.1" max="5" value="1" step="0.1">
+      </div>
+
+      <!-- Hint -->
+      <div class="option-group" style="border-top: 1px solid rgba(255,255,255,0.05); padding-top: 12px;">
+        <div style="font-size: 10.5px; color: rgba(255,255,255,0.35); line-height: 1.6;">
+          <strong style="color: rgba(255,255,255,0.5);">Controls</strong><br>
+          🖱 Scroll to zoom · Drag to pan<br>
+          🖱 Double-click → Julia fullscreen<br>
+          ⎋ Escape → back to Mandelbrot
+        </div>
+      </div>
+
+      <!-- Reset -->
+      <div class="option-group">
+        <button id="reset-view" class="btn-primary">Reset View</button>
+      </div>
+    </div>
+  </div>
+
+  <button id="back-to-mandelbrot" class="hidden">
+    ← Back to Mandelbrot
+  </button>
+
+  <div id="loading-overlay" class="hidden">
+    <div class="spinner"></div>
+    <span>Computing deep zoom reference orbit…</span>
+  </div>
+
+  <script src="js/palettes.js"></script>
+  <script src="js/shaders.js"></script>
+  <script src="js/renderer.js"></script>
+  <script src="js/perturbation.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,436 @@
+/* ─── Fractal Explorer — Premium Dark Theme ─── */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@300;400;500&display=swap');
+
+:root {
+  --bg-dark: #0a0a12;
+  --panel-bg: rgba(12, 12, 25, 0.75);
+  --panel-border: rgba(100, 120, 255, 0.15);
+  --panel-glow: rgba(80, 100, 255, 0.08);
+  --accent: #6c8aff;
+  --accent-dim: #3a4fa0;
+  --text: #e0e4f0;
+  --text-dim: #8890aa;
+  --radius: 12px;
+  --radius-sm: 6px;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  width: 100%; height: 100%;
+  overflow: hidden;
+  background: var(--bg-dark);
+  font-family: 'Inter', system-ui, sans-serif;
+  color: var(--text);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ─── Main Canvas ─── */
+#main-canvas {
+  position: fixed;
+  inset: 0;
+  width: 100%; height: 100%;
+  cursor: crosshair;
+  display: block;
+}
+
+/* ─── Julia Preview ─── */
+#julia-container {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  width: 240px;
+  height: 240px;
+  border-radius: var(--radius);
+  overflow: hidden;
+  border: 1px solid var(--panel-border);
+  box-shadow:
+    0 0 30px rgba(80, 100, 255, 0.12),
+    0 8px 32px rgba(0, 0, 0, 0.5);
+  transition: transform 0.3s ease, opacity 0.3s ease, box-shadow 0.3s ease;
+  z-index: 10;
+}
+
+#julia-container:hover {
+  transform: scale(1.05);
+  box-shadow:
+    0 0 40px rgba(80, 100, 255, 0.2),
+    0 12px 48px rgba(0, 0, 0, 0.6);
+}
+
+#julia-canvas {
+  width: 100%; height: 100%;
+  display: block;
+}
+
+.julia-label {
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  padding: 6px 10px;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.7);
+  background: linear-gradient(transparent, rgba(0,0,0,0.7));
+  pointer-events: none;
+}
+
+/* ─── Info Bar ─── */
+#info-bar {
+  position: fixed;
+  bottom: 0; left: 0; right: 260px;
+  display: flex;
+  gap: 24px;
+  padding: 10px 20px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11.5px;
+  color: var(--text-dim);
+  background: linear-gradient(transparent, rgba(0,0,0,0.6));
+  pointer-events: none;
+  z-index: 5;
+}
+
+#info-bar span { white-space: nowrap; }
+
+.prec-standard { color: var(--text-dim); }
+.prec-double-double { color: #4ecdc4; }
+.prec-perturbation { color: #ff6b6b; }
+
+/* ─── Options Panel ─── */
+#options-panel {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  width: 260px;
+  max-height: calc(100vh - 300px);
+  border-radius: var(--radius);
+  background: var(--panel-bg);
+  border: 1px solid var(--panel-border);
+  backdrop-filter: blur(24px) saturate(1.4);
+  -webkit-backdrop-filter: blur(24px) saturate(1.4);
+  box-shadow:
+    0 0 40px var(--panel-glow),
+    0 8px 32px rgba(0, 0, 0, 0.4),
+    inset 0 1px 0 rgba(255,255,255,0.04);
+  overflow-y: auto;
+  overflow-x: hidden;
+  z-index: 20;
+  transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.35s ease;
+}
+
+#options-panel.collapsed {
+  transform: translateX(220px);
+  opacity: 0.6;
+}
+
+#options-panel.collapsed:hover {
+  opacity: 0.9;
+}
+
+/* Scrollbar styling */
+#options-panel::-webkit-scrollbar { width: 4px; }
+#options-panel::-webkit-scrollbar-track { background: transparent; }
+#options-panel::-webkit-scrollbar-thumb {
+  background: rgba(100, 120, 255, 0.3);
+  border-radius: 2px;
+}
+
+.panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px 10px;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+  position: sticky;
+  top: 0;
+  background: var(--panel-bg);
+  backdrop-filter: blur(24px);
+  z-index: 1;
+}
+
+.panel-header h2 {
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  background: linear-gradient(135deg, #8fa8ff, #6c8aff);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.panel-header button {
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.08);
+  color: var(--text-dim);
+  width: 28px; height: 28px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-size: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.panel-header button:hover {
+  background: rgba(100, 120, 255, 0.15);
+  color: var(--accent);
+}
+
+.panel-content { padding: 8px 16px 16px; }
+
+/* ─── Option Groups ─── */
+.option-group {
+  margin-bottom: 16px;
+}
+
+.option-group label {
+  display: block;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-dim);
+  margin-bottom: 6px;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+}
+
+.option-group label span {
+  color: var(--accent);
+  font-family: 'JetBrains Mono', monospace;
+}
+
+/* Select */
+.option-group select {
+  width: 100%;
+  padding: 8px 10px;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  font-family: 'Inter', sans-serif;
+  font-size: 12.5px;
+  cursor: pointer;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%236c8aff' viewBox='0 0 16 16'%3E%3Cpath d='M8 11L3 6h10z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 8px center;
+}
+
+.option-group select:focus {
+  border-color: var(--accent-dim);
+  box-shadow: 0 0 0 2px rgba(108, 138, 255, 0.12);
+}
+
+.option-group select option {
+  background: #1a1a2e;
+  color: var(--text);
+}
+
+/* Range slider */
+.option-group input[type="range"] {
+  width: 100%;
+  height: 4px;
+  -webkit-appearance: none;
+  appearance: none;
+  background: rgba(255,255,255,0.08);
+  border-radius: 2px;
+  outline: none;
+  cursor: pointer;
+}
+
+.option-group input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 14px; height: 14px;
+  border-radius: 50%;
+  background: var(--accent);
+  border: 2px solid rgba(255,255,255,0.15);
+  box-shadow: 0 0 8px rgba(108, 138, 255, 0.4);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.option-group input[type="range"]::-webkit-slider-thumb:hover {
+  transform: scale(1.2);
+  box-shadow: 0 0 12px rgba(108, 138, 255, 0.6);
+}
+
+/* Toggle checkboxes */
+.toggles { display: flex; flex-direction: column; gap: 8px; }
+
+.toggle-label {
+  display: flex !important;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  text-transform: none !important;
+  font-size: 12.5px !important;
+  color: var(--text) !important;
+  margin-bottom: 0 !important;
+}
+
+.toggle-label input[type="checkbox"] {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 36px;
+  min-width: 36px;
+  height: 20px;
+  border-radius: 10px;
+  background: rgba(255,255,255,0.1);
+  border: 1px solid rgba(255,255,255,0.08);
+  cursor: pointer;
+  position: relative;
+  transition: background 0.25s ease, border-color 0.25s ease;
+}
+
+.toggle-label input[type="checkbox"]::after {
+  content: '';
+  position: absolute;
+  top: 2px; left: 2px;
+  width: 14px; height: 14px;
+  border-radius: 50%;
+  background: var(--text-dim);
+  transition: transform 0.25s ease, background 0.25s ease;
+}
+
+.toggle-label input[type="checkbox"]:checked {
+  background: var(--accent-dim);
+  border-color: var(--accent);
+}
+
+.toggle-label input[type="checkbox"]:checked::after {
+  transform: translateX(16px);
+  background: var(--accent);
+  box-shadow: 0 0 6px rgba(108, 138, 255, 0.5);
+}
+
+/* Palette preview */
+#palette-preview {
+  height: 16px;
+  border-radius: 4px;
+  margin-top: 6px;
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
+  border: 1px solid rgba(255,255,255,0.06);
+}
+
+/* Formula display */
+#formula-display {
+  margin-top: 8px;
+  padding: 8px 10px;
+  background: rgba(108, 138, 255, 0.06);
+  border: 1px solid rgba(108, 138, 255, 0.12);
+  border-radius: var(--radius-sm);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: rgba(200, 210, 255, 0.8);
+  letter-spacing: 0.3px;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Primary button */
+.btn-primary {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid var(--accent-dim);
+  border-radius: var(--radius-sm);
+  background: linear-gradient(135deg, rgba(108,138,255,0.12), rgba(108,138,255,0.06));
+  color: var(--accent);
+  font-family: 'Inter', sans-serif;
+  font-size: 12.5px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  letter-spacing: 0.3px;
+}
+
+.btn-primary:hover {
+  background: linear-gradient(135deg, rgba(108,138,255,0.2), rgba(108,138,255,0.1));
+  box-shadow: 0 0 16px rgba(108, 138, 255, 0.15);
+  transform: translateY(-1px);
+}
+
+.btn-primary:active { transform: translateY(0); }
+
+/* ─── Back Button ─── */
+#back-to-mandelbrot {
+  position: fixed;
+  top: 20px;
+  left: 20px;
+  padding: 10px 18px;
+  border-radius: var(--radius-sm);
+  background: var(--panel-bg);
+  border: 1px solid var(--panel-border);
+  backdrop-filter: blur(16px);
+  color: var(--text);
+  font-family: 'Inter', sans-serif;
+  font-size: 13px;
+  cursor: pointer;
+  z-index: 20;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+}
+
+#back-to-mandelbrot:hover {
+  background: rgba(108,138,255,0.15);
+  border-color: var(--accent-dim);
+}
+
+/* ─── Loading Overlay ─── */
+#loading-overlay {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  background: rgba(0,0,0,0.5);
+  backdrop-filter: blur(4px);
+  z-index: 100;
+  color: var(--text);
+  font-size: 14px;
+}
+
+.spinner {
+  width: 24px; height: 24px;
+  border: 2px solid rgba(108,138,255,0.3);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ─── Hidden ─── */
+.hidden { display: none !important; }
+
+/* ─── Responsive ─── */
+@media (max-width: 600px) {
+  #options-panel {
+    width: 220px;
+    top: 10px;
+    right: 10px;
+  }
+
+  #julia-container {
+    width: 160px;
+    height: 160px;
+    bottom: 10px;
+    right: 10px;
+  }
+
+  #info-bar {
+    right: 170px;
+    font-size: 10px;
+    gap: 12px;
+  }
+}
+
+/* ─── Selection ─── */
+::selection {
+  background: rgba(108,138,255,0.3);
+}
