@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Magnets on a Grid</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <a href="../index.html" class="back-link">← Back to Vibes</a>
+
+    <canvas id="scene"></canvas>
+
+    <button id="panel-toggle" class="icon-btn" aria-label="Toggle controls">☰</button>
+
+    <div id="panel">
+        <div class="panel-header">
+            <h1>Magnets on a Grid</h1>
+        </div>
+        <p class="subtitle">
+            Magnetic dipoles pinned at lattice vertices, free to rotate. Each one torques its
+            neighbours toward a minimum-energy pattern. An adjustable external magnetic field can
+            force global alignment — the compass dials track the applied field and the net
+            magnetization of the system. Click any magnet to disturb it.
+        </p>
+
+        <div class="row">
+            <label for="shape">Lattice</label>
+            <select id="shape">
+                <option value="square" selected>Square</option>
+                <option value="triangular">Triangular</option>
+                <option value="hexagonal">Hexagonal</option>
+            </select>
+        </div>
+
+        <div class="row col">
+            <label for="size">Size <span class="value" id="size-label">6 × 6</span></label>
+            <input type="range" id="size" min="2" max="20" value="6" step="1">
+        </div>
+
+        <div class="row col">
+            <label for="friction">Friction <span class="value" id="friction-label">1.00</span></label>
+            <input type="range" id="friction" min="0.05" max="4" value="1" step="0.05">
+        </div>
+
+        <div class="row col">
+            <label for="ext-dir">External field direction <span class="value" id="ext-dir-label">N (0°)</span></label>
+            <input type="range" id="ext-dir" min="0" max="360" value="0" step="5">
+        </div>
+
+        <div class="row col">
+            <label for="ext-int">External field intensity <span class="value" id="ext-int-label">0.0</span></label>
+            <input type="range" id="ext-int" min="0" max="20" value="0" step="0.1">
+        </div>
+
+        <div class="row">
+            <label for="overlay">Field overlay</label>
+            <select id="overlay">
+                <option value="off">Off</option>
+                <option value="arrows">Arrows</option>
+                <option value="lines" selected>Field lines</option>
+            </select>
+        </div>
+
+        <div class="row">
+            <label for="colormap">Field colormap</label>
+            <input type="checkbox" id="colormap">
+        </div>
+
+        <div class="row col">
+            <label for="density">Overlay density <span class="value" id="density-label">3</span></label>
+            <input type="range" id="density" min="1" max="5" value="3" step="1">
+        </div>
+
+        <button id="randomize">⟳ Randomize</button>
+
+        <div class="stats">
+            <div class="stat-row"><span>Magnets</span><span class="stat-value" id="count">—</span></div>
+            <div class="stat-row"><span>Energy / magnet</span><span class="stat-value" id="energy">—</span></div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+
+</html>
