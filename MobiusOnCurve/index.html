@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Möbius on a Curve</title>
+    <link rel="stylesheet" href="style.css">
+
+    <!-- Load Three.js and dependencies -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+</head>
+
+<body>
+    <a href="../index.html" class="back-link">← Back to Vibes</a>
+
+    <div id="canvas-container"></div>
+
+    <button id="ui-toggle" class="icon-btn" aria-label="Open Menu">☰</button>
+
+    <div id="ui-container">
+        <div class="ui-header">
+            <h1>Möbius on a Curve</h1>
+            <div class="header-controls">
+                <button id="info-btn" class="icon-btn small" aria-label="Information">i</button>
+                <button id="minimize-btn" class="icon-btn small" aria-label="Minimize">_</button>
+            </div>
+        </div>
+        <div class="subtitle">
+            Every unordered pair of points on a closed curve, lifted to the pair's midpoint at height equal to
+            the pair's distance. The result is a Möbius band whose boundary is the curve itself.
+            Inspired by <a href="https://www.youtube.com/watch?v=IQqtsm-bBRU" target="_blank"
+                rel="noopener">this 3Blue1Brown video</a> on the inscribed rectangle problem.
+        </div>
+
+        <button id="draw-btn" class="accent-btn">✏️ Draw your own curve</button>
+
+        <div class="control-group">
+            <label>Preset curves</label>
+            <div class="preset-grid">
+                <button class="preset-btn active" data-preset="heart">Heart</button>
+                <button class="preset-btn" data-preset="eight">Figure 8</button>
+                <button class="preset-btn" data-preset="ellipse">Ellipse</button>
+                <button class="preset-btn" data-preset="square">Square</button>
+                <button class="preset-btn" data-preset="triangle">Triangle</button>
+                <button class="preset-btn" data-preset="hexagon">Hexagon</button>
+                <button class="preset-btn" data-preset="kite">Penrose Kite</button>
+                <button class="preset-btn" data-preset="dart">Penrose Dart</button>
+                <button class="preset-btn" data-preset="koch">Koch Snowflake</button>
+                <button class="preset-btn" data-preset="coast">Koch Coastline</button>
+                <button class="preset-btn" data-preset="hilbert">Hilbert Curve</button>
+                <button class="preset-btn" data-preset="mandel">Mandelbrot</button>
+            </div>
+        </div>
+
+        <div class="control-group">
+            <label for="detail-input">Detail <span class="value-badge" id="detail-value">180</span></label>
+            <input type="range" id="detail-input" value="180" min="60" max="320" step="20">
+        </div>
+
+        <div class="control-group">
+            <label for="height-input">Height scale <span class="value-badge" id="height-value">1.00</span></label>
+            <input type="range" id="height-input" value="1" min="0" max="2" step="0.05">
+        </div>
+
+        <div class="control-group">
+            <label for="opacity-input">Surface opacity <span class="value-badge"
+                    id="opacity-value">1.00</span></label>
+            <input type="range" id="opacity-input" value="1" min="0.05" max="1" step="0.05">
+        </div>
+
+        <div class="control-group checks">
+            <label class="check"><input type="checkbox" id="wireframe-check"> Wireframe</label>
+            <label class="check"><input type="checkbox" id="rotate-check" checked> Auto-rotate</label>
+            <label class="check"><input type="checkbox" id="curve-check" checked> Show curve</label>
+        </div>
+
+        <div class="control-group">
+            <button id="reset-view-btn">Reset view</button>
+        </div>
+
+        <div class="stats">
+            <div class="stat-row"><span>Vertices:</span><span id="stat-vertices" class="stat-value">–</span></div>
+            <div class="stat-row"><span>Triangles:</span><span id="stat-triangles" class="stat-value">–</span></div>
+            <div class="stat-row"><span>Max pair distance:</span><span id="stat-maxh" class="stat-value">–</span></div>
+        </div>
+    </div>
+
+    <div id="draw-overlay">
+        <div class="draw-hint">
+            <span id="draw-hint-text">Click and drag to draw a closed curve — release to finish (it closes
+                automatically).</span>
+            <button id="draw-cancel-btn">Cancel</button>
+        </div>
+        <canvas id="draw-canvas"></canvas>
+    </div>
+
+    <div id="info-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal">&times;</span>
+            <h2>Why is this a Möbius band?</h2>
+            <p>Take a closed curve γ(t) with parameter 0 ≤ t ≤ 1. An <strong>unordered pair</strong> of points on
+                the curve is given by parameters (x, y) with 0 ≤ x ≤ y ≤ 1 — a triangle. On its two legs, the pair
+                (0, y) describes the same pair as (y, 1), so those edges are glued together <em>with a flip</em>.
+                A triangle with two edges glued that way is exactly a <strong>Möbius band</strong>.</p>
+
+            <h3>The construction</h3>
+            <p>Each pair {A, B} of curve points is mapped to the point in space directly above the
+                <strong>midpoint</strong> of A and B, at height equal to the <strong>distance</strong> |A − B|.
+                Pairs with A = B land on the curve itself at height 0 — so the boundary of the Möbius band is the
+                original curve.</p>
+            <p>To render it, the parameter triangle 0 ≤ x ≤ y ≤ 1 is triangulated on a regular grid and each grid
+                node (x, y) is mapped to ((γ(x)+γ(y))/2, |γ(x) − γ(y)|). Because γ(0) = γ(1), the glued edges match
+                up automatically and the mesh closes into the band.</p>
+
+            <h3>Inscribed rectangles</h3>
+            <p>This is the surface from <strong>Vaughan's proof</strong> of the inscribed rectangle theorem. A
+                Möbius band cannot be embedded in the half-space above the plane with its boundary on the plane
+                without intersecting itself. A self-intersection means two <em>different</em> pairs of curve points
+                share the same midpoint and the same distance — and four such points always form a
+                <strong>rectangle</strong>. Hence every closed curve in the plane has an inscribed rectangle!
+                Watch for the self-intersections of the surface as it rotates.</p>
+            <p>This vibe is inspired by 3Blue1Brown's video
+                <a href="https://www.youtube.com/watch?v=IQqtsm-bBRU" target="_blank" rel="noopener">“This open
+                    problem taught me what topology is”</a> — watch it for the full story.</p>
+
+            <h3>Controls</h3>
+            <ul>
+                <li><strong>Drag</strong> to rotate, <strong>scroll</strong> to zoom, <strong>right-drag</strong>
+                    to pan.</li>
+                <li><strong>Detail</strong>: number of samples along the curve (mesh resolution).</li>
+                <li><strong>Height scale</strong>: visually exaggerate or flatten the band (1 = exact distances).
+                </li>
+            </ul>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+
+</html>
