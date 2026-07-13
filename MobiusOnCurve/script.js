@@ -748,6 +748,7 @@
 
     let currentCurve = { kind: 'preset', name: 'heart' };
     let detail = 180;
+    let surfRes = 1; // surface triangulation grid multiplier relative to detail
 
     function curveSamples(N) {
         if (currentCurve.kind === 'preset') {
@@ -763,6 +764,10 @@
 
     function rebuild() {
         const pts = normalizePoints(curveSamples(detail), 3.0);
+        // the surface grid resolution is independent of the boundary curve:
+        // surfRes scales how finely the parameter triangle is triangulated.
+        const surfN = Math.min(480, Math.max(20, Math.round(detail * surfRes)));
+        const surfPts = surfN === detail ? pts : normalizePoints(curveSamples(surfN), 3.0);
 
         if (surfaceMesh) {
             surfaceGroup.remove(surfaceMesh, backMesh, wireMesh);
@@ -773,7 +778,7 @@
             tubeMesh.geometry.dispose();
         }
 
-        const { geo, maxH, vertices, triangles } = buildSurfaceGeometry(pts);
+        const { geo, maxH, vertices, triangles } = buildSurfaceGeometry(surfPts);
         surfaceMesh = new THREE.Mesh(geo, surfMat);
         backMesh = new THREE.Mesh(geo, surfMat);
         backMesh.visible = false;
@@ -924,6 +929,13 @@
     detailInput.addEventListener('input', () => {
         detail = parseInt(detailInput.value, 10);
         document.getElementById('detail-value').textContent = detail;
+        rebuild();
+    });
+
+    const resInput = document.getElementById('res-input');
+    resInput.addEventListener('input', () => {
+        surfRes = parseFloat(resInput.value);
+        document.getElementById('res-value').textContent = surfRes.toFixed(2) + '×';
         rebuild();
     });
 

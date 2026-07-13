@@ -441,12 +441,12 @@ input[type="range"] {
         display: none;
     }
 
-    /* quick-action toolbar, right of the Vibes link */
+    /* quick-action toolbar, aligned to the right (Vibes stays on the left) */
     #mobile-toolbar {
         display: flex;
         position: fixed;
         top: 16px;
-        left: 92px;
+        right: 16px;
         gap: 8px;
         z-index: 20;
     }
