@@ -27,6 +27,23 @@
                 return { x: Math.sin(a), z: -Math.sin(a) * Math.cos(a) };
             }
         },
+        trefoil: {
+            kind: 'param',
+            fn: t => {
+                const a = TAU * t;
+                return {
+                    x: Math.sin(a) + 2 * Math.sin(2 * a),
+                    z: -(Math.cos(a) - 2 * Math.cos(2 * a))
+                };
+            }
+        },
+        egg: {
+            kind: 'param',
+            fn: t => {
+                const a = TAU * t;
+                return { x: 1.3 * Math.cos(a), z: 0.9 * Math.sin(a) * (1 + 0.22 * Math.cos(a)) };
+            }
+        },
         ellipse: {
             kind: 'param',
             fn: t => {
@@ -164,9 +181,9 @@
     let mandelCache = null;
     function mandelbrotContour() {
         if (mandelCache) return mandelCache;
-        const nx = 192, ny = 161; // ny odd so the real axis (the antenna) is sampled
+        const nx = 288, ny = 241; // ny odd so the real axis (the antenna) is sampled
         const x0 = -2.1, x1 = 0.7, y0 = -1.2, y1 = 1.2;
-        const maxIter = 60;
+        const maxIter = 100;
         const inside = new Uint8Array(nx * ny);
         for (let j = 0; j < ny; j++) {
             const ci = y0 + (y1 - y0) * j / (ny - 1);
@@ -195,7 +212,7 @@
     };
     PRESETS.mandel = {
         kind: 'fractal',
-        gen: N => resampleClosed(mandelbrotContour(), N)
+        gen: N => resampleClosed(mandelbrotContour(), Math.min(2 * N, 480))
     };
 
     PRESETS.koch = {
@@ -317,6 +334,7 @@
         const count = offsets[N + 1];
 
         const pos = new Float32Array(count * 3);
+        const uv = new Float32Array(count * 2);
         const heights = new Float32Array(count);
         let maxH = 0;
         for (let i = 0; i <= N; i++) {
@@ -328,6 +346,12 @@
                 pos[3 * idx] = (A.x + B.x) / 2;
                 pos[3 * idx + 1] = h;
                 pos[3 * idx + 2] = (A.z + B.z) / 2;
+                // texture coords in the standard Mobius strip projection:
+                // s along the strip (u / 2pi), t across its width. Textures
+                // periodic in s and symmetric in t match the (s,t)~(s+1,1-t)
+                // gluing, so they are seamless on the surface.
+                uv[2 * idx] = (i + j) / N;
+                uv[2 * idx + 1] = 1 - (j - i) / N;
                 heights[idx] = h;
                 if (h > maxH) maxH = h;
             }
@@ -358,10 +382,55 @@
 
         const geo = new THREE.BufferGeometry();
         geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+        geo.setAttribute('uv', new THREE.BufferAttribute(uv, 2));
         geo.setAttribute('color', new THREE.BufferAttribute(col, 3));
         geo.setIndex(new THREE.BufferAttribute(new Uint32Array(indices), 1));
         geo.computeVertexNormals();
+
+        // morph target: the same grid node (i, j) on the standard Mobius strip
+        const tgt = new Float32Array(count * 3);
+        for (let i = 0; i <= N; i++) {
+            for (let j = i; j <= N; j++) {
+                mobiusTarget(i / N, j / N, tgt, 3 * (offsets[i] + (j - i)));
+            }
+        }
+        const tmp = new THREE.BufferGeometry();
+        tmp.setAttribute('position', new THREE.BufferAttribute(tgt, 3));
+        tmp.setIndex(geo.index);
+        tmp.computeVertexNormals();
+        geo.morphAttributes.position = [tmp.attributes.position];
+        geo.morphAttributes.normal = [tmp.attributes.normal];
+
         return { geo, maxH, vertices: count, triangles: indices.length / 3 };
+    }
+
+    // =====================================================================
+    // Morph target: the standard Mobius strip. Our parameter triangle maps
+    // onto it via u = 2*pi*(x + y), v = 1 - 2*(y - x); the triangle's glued
+    // edges (0,y) ~ (y,1) land on the same strip points, and the diagonal
+    // x = y (the curve itself) lands on the strip's boundary circle.
+    // =====================================================================
+
+    const MOBIUS_R = 1.5, MOBIUS_W = 0.55, MOBIUS_H = 1.0;
+
+    function mobiusTarget(ti, tj, out, k) {
+        const u = TAU * (ti + tj);
+        const v = 1 - 2 * (tj - ti);
+        const r = MOBIUS_R + MOBIUS_W * v * Math.cos(u / 2);
+        out[k] = r * Math.cos(u);
+        out[k + 1] = MOBIUS_H + MOBIUS_W * v * Math.sin(u / 2);
+        out[k + 2] = r * Math.sin(u);
+    }
+
+    class MobiusEdgeCurve extends THREE.Curve {
+        getPoint(t, target = new THREE.Vector3()) {
+            const u = 2 * TAU * t; // boundary = pairs (t, t), a double loop
+            const r = MOBIUS_R + MOBIUS_W * Math.cos(u / 2);
+            return target.set(
+                r * Math.cos(u),
+                MOBIUS_H + MOBIUS_W * Math.sin(u / 2),
+                r * Math.sin(u));
+        }
     }
 
     // Piecewise-linear closed curve for the boundary tube.
@@ -386,7 +455,7 @@
 
     let scene, camera, renderer, controls;
     let surfaceGroup, curveGroup;
-    let surfaceMesh = null, wireMesh = null, tubeMesh = null;
+    let surfaceMesh = null, backMesh = null, wireMesh = null, tubeMesh = null;
 
     const surfMat = new THREE.MeshPhongMaterial({
         vertexColors: true,
@@ -395,24 +464,232 @@
         specular: 0x444455,
         polygonOffset: true,
         polygonOffsetFactor: 1,
-        polygonOffsetUnits: 1
+        polygonOffsetUnits: 1,
+        morphTargets: true,
+        morphNormals: true
     });
     const wireMat = new THREE.MeshBasicMaterial({
         wireframe: true,
         color: 0xffffff,
         transparent: true,
-        opacity: 0.10
+        opacity: 0.10,
+        morphTargets: true
     });
-    const tubeMat = new THREE.MeshBasicMaterial({ color: 0x7fe0ff });
+    const tubeMat = new THREE.MeshBasicMaterial({ color: 0x7fe0ff, morphTargets: true });
 
-    const HOME_POS = new THREE.Vector3(3.4, 3.1, 4.4);
+    // ---------- surface textures (painted in strip coordinates) ----------
+
+    let currentOpacity = 1;
+    function styleSurfaceMaterial(mat) {
+        mat.opacity = currentOpacity;
+        mat.transparent = currentOpacity < 1;
+        // skip depth writes when translucent so the self-intersecting band
+        // doesn't occlude itself in draw order
+        mat.depthWrite = currentOpacity >= 1;
+        mat.needsUpdate = true;
+    }
+
+    // Bands of cycling color separated by thin lines orthogonal to the strip
+    // (lines of constant u). Uniform across the width, so flip-symmetric.
+    // Hue advances 180 degrees per loop ("double period"): the return trip
+    // around the band carries the complementary colors, so the two faces of
+    // the strip are rendered with a front canvas and a hue-shifted back one.
+    // The canvas spans the FULL double period s in [0, 2] (sampled with
+    // repeat.x = 0.5), so the hue is linear in s with no interior wrap —
+    // otherwise a complementary-color seam appears along the glued edge.
+    function makeStripesCanvas(hueOffset) {
+        const w = 2048, h = 256;
+        const cv = document.createElement('canvas');
+        cv.width = w;
+        cv.height = h;
+        const ctx = cv.getContext('2d');
+        for (let x = 0; x < w; x++) {
+            ctx.fillStyle = `hsl(${hueOffset + 360 * x / w}, 72%, 55%)`;
+            ctx.fillRect(x, 0, 1, h);
+        }
+        const nLines = 72; // 36 per loop of the strip
+        ctx.fillStyle = 'rgba(12, 12, 22, 0.92)';
+        for (let k = 0; k < nLines; k++) {
+            ctx.fillRect(Math.round(k * w / nLines) - 2, 0, 4, h);
+        }
+        ctx.fillRect(w - 2, 0, 2, h); // wrap of the k = 0 line
+        return cv;
+    }
+
+    function drawAnt(ctx, cx, cy, L) {
+        ctx.save();
+        ctx.translate(cx, cy);
+        ctx.strokeStyle = '#141414';
+        ctx.fillStyle = '#141414';
+        ctx.lineWidth = Math.max(2, 0.04 * L);
+        ctx.lineCap = 'round';
+        // three leg pairs + antennae, mirrored across the walking axis
+        const legs = [
+            [-0.04, -0.14, 0.30, -0.24, 0.46],
+            [0.04, 0.07, 0.32, 0.03, 0.48],
+            [0.12, 0.20, 0.30, 0.30, 0.44]
+        ];
+        for (const sgn of [-1, 1]) {
+            for (const [ax, mx, my, ex, ey] of legs) {
+                ctx.beginPath();
+                ctx.moveTo(ax * L, 0);
+                ctx.lineTo(mx * L, sgn * my * L);
+                ctx.lineTo(ex * L, sgn * ey * L);
+                ctx.stroke();
+            }
+            ctx.beginPath();
+            ctx.moveTo(0.34 * L, sgn * 0.02 * L);
+            ctx.quadraticCurveTo(0.46 * L, sgn * 0.10 * L, 0.53 * L, sgn * 0.20 * L);
+            ctx.stroke();
+        }
+        const ell = (x, rx, ry) => {
+            ctx.beginPath();
+            ctx.ellipse(x * L, 0, rx * L, ry * L, 0, 0, TAU);
+            ctx.fill();
+        };
+        ell(-0.26, 0.22, 0.12); // abdomen
+        ell(0.04, 0.13, 0.08);  // thorax
+        ell(0.28, 0.09, 0.07);  // head
+        ctx.restore();
+    }
+
+    // Grayscale square grid with ants marching single file along the strip's
+    // center line, a la Escher's "Mobius Strip II".
+    function makeAntsCanvas() {
+        const w = 1024, h = 256;
+        const cv = document.createElement('canvas');
+        cv.width = w;
+        cv.height = h;
+        const ctx = cv.getContext('2d');
+        ctx.fillStyle = '#e6e6e6';
+        ctx.fillRect(0, 0, w, h);
+        // grid cells are roughly square on the strip (length ~2*pi*R, width 2*w)
+        const cols = 32, rows = 4;
+        ctx.strokeStyle = '#8a8a8a';
+        ctx.lineWidth = 2;
+        for (let k = 0; k <= cols; k++) {
+            const x = Math.round(k * w / cols);
+            ctx.beginPath();
+            ctx.moveTo(x, 0);
+            ctx.lineTo(x, h);
+            ctx.stroke();
+        }
+        for (let k = 0; k <= rows; k++) {
+            const y = Math.round(k * h / rows);
+            ctx.beginPath();
+            ctx.moveTo(0, y);
+            ctx.lineTo(w, y);
+            ctx.stroke();
+        }
+        const nAnts = 5;
+        for (let k = 0; k < nAnts; k++) {
+            drawAnt(ctx, (k + 0.5) * w / nAnts, h / 2, 85);
+        }
+        return cv;
+    }
+
+    const texMats = {};
+    let currentTexName = 'plasma';
+
+    function makeMapMaterial(cv, side, repeatX = 1) {
+        const map = new THREE.CanvasTexture(cv);
+        map.wrapS = THREE.RepeatWrapping;
+        map.wrapT = THREE.ClampToEdgeWrapping;
+        map.repeat.x = repeatX;
+        map.anisotropy = renderer.capabilities.getMaxAnisotropy();
+        const mat = new THREE.MeshPhongMaterial({
+            map,
+            side,
+            shininess: 30,
+            specular: 0x333340,
+            polygonOffset: true,
+            polygonOffsetFactor: 1,
+            polygonOffsetUnits: 1,
+            morphTargets: true,
+            morphNormals: true
+        });
+        styleSurfaceMaterial(mat);
+        return mat;
+    }
+
+    function allSurfaceMaterials() {
+        const list = [surfMat];
+        for (const v of Object.values(texMats)) {
+            if (v.front) list.push(v.front, v.back);
+            else list.push(v);
+        }
+        return list;
+    }
+
+    // The stripes coloring lives on the band's orientation double cover, so
+    // it needs different (complementary) textures on the two render faces.
+    function applySurfaceMaterials() {
+        if (!surfaceMesh) return;
+        if (currentTexName === 'stripes') {
+            if (!texMats.stripes) {
+                texMats.stripes = {
+                    front: makeMapMaterial(makeStripesCanvas(0), THREE.FrontSide, 0.5),
+                    back: makeMapMaterial(makeStripesCanvas(180), THREE.BackSide, 0.5)
+                };
+            }
+            surfaceMesh.material = texMats.stripes.front;
+            backMesh.material = texMats.stripes.back;
+            backMesh.visible = true;
+        } else {
+            if (currentTexName === 'plasma') {
+                surfaceMesh.material = surfMat;
+            } else {
+                if (!texMats.ants) texMats.ants = makeMapMaterial(makeAntsCanvas(), THREE.DoubleSide);
+                surfaceMesh.material = texMats.ants;
+            }
+            backMesh.visible = false;
+        }
+    }
+
+    const HOME_POS = new THREE.Vector3(6.8, 6.2, 8.8);
     const HOME_TARGET = new THREE.Vector3(0, 0.8, 0);
+
+    // Center the figure in the part of the screen not covered by UI: on
+    // mobile the bottom third holds the control sheet, on desktop the right
+    // side holds the panel. A camera view offset shifts the projection.
+    function updateViewOffset() {
+        const w = window.innerWidth, h = window.innerHeight;
+        if (window.matchMedia('(max-width: 640px)').matches) {
+            camera.setViewOffset(w, h, 0, h / 6, w, h);
+        } else {
+            camera.setViewOffset(w, h, 161, 0, w, h);
+        }
+    }
+
+    // Morph animation between the pair surface (0) and the Mobius strip (1)
+    const morph = { p: 0, target: 0 };
+    let morphFrames = 110; // frames for a full morph
+
+    function easeInOutCubic(p) {
+        return p < 0.5 ? 4 * p * p * p : 1 - Math.pow(-2 * p + 2, 3) / 2;
+    }
+
+    function applyMorph() {
+        const e = easeInOutCubic(morph.p);
+        for (const m of [surfaceMesh, backMesh, wireMesh, tubeMesh]) {
+            if (m && m.morphTargetInfluences) m.morphTargetInfluences[0] = e;
+        }
+    }
+
+    function setMorphTarget(target, instant) {
+        morph.target = target;
+        if (instant) morph.p = target;
+        document.getElementById('morph-btn').textContent =
+            target === 1 ? '🌀 Morph back to pair surface' : '🌀 Morph to Möbius strip';
+        applyMorph();
+    }
 
     function initScene() {
         scene = new THREE.Scene();
 
         camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.05, 100);
         camera.position.copy(HOME_POS);
+        updateViewOffset();
 
         renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
         renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
@@ -447,6 +724,7 @@
 
         window.addEventListener('resize', () => {
             camera.aspect = window.innerWidth / window.innerHeight;
+            updateViewOffset();
             camera.updateProjectionMatrix();
             renderer.setSize(window.innerWidth, window.innerHeight);
             resizeDrawCanvas();
@@ -454,6 +732,11 @@
 
         (function animate() {
             requestAnimationFrame(animate);
+            if (morph.p !== morph.target) {
+                const dir = morph.target > morph.p ? 1 : -1;
+                morph.p = Math.min(1, Math.max(0, morph.p + dir / morphFrames));
+                applyMorph();
+            }
             controls.update();
             renderer.render(scene, camera);
         })();
@@ -482,7 +765,7 @@
         const pts = normalizePoints(curveSamples(detail), 3.0);
 
         if (surfaceMesh) {
-            surfaceGroup.remove(surfaceMesh, wireMesh);
+            surfaceGroup.remove(surfaceMesh, backMesh, wireMesh);
             surfaceMesh.geometry.dispose();
         }
         if (tubeMesh) {
@@ -492,15 +775,23 @@
 
         const { geo, maxH, vertices, triangles } = buildSurfaceGeometry(pts);
         surfaceMesh = new THREE.Mesh(geo, surfMat);
+        backMesh = new THREE.Mesh(geo, surfMat);
+        backMesh.visible = false;
         wireMesh = new THREE.Mesh(geo, wireMat);
         wireMesh.visible = document.getElementById('wireframe-check').checked;
-        surfaceGroup.add(surfaceMesh, wireMesh);
+        surfaceGroup.add(surfaceMesh, backMesh, wireMesh);
+        applySurfaceMaterials();
 
-        const tubeGeo = new THREE.TubeGeometry(
-            new LoopCurve(pts), Math.min(2 * pts.length, 800), 0.026, 10, true);
+        const tubeSegs = Math.min(2 * pts.length, 800);
+        const tubeGeo = new THREE.TubeGeometry(new LoopCurve(pts), tubeSegs, 0.026, 10, true);
+        // morph target: the boundary circle of the standard Mobius strip
+        const tubeTgt = new THREE.TubeGeometry(new MobiusEdgeCurve(), tubeSegs, 0.026, 10, true);
+        tubeGeo.morphAttributes.position = [tubeTgt.attributes.position];
         tubeMesh = new THREE.Mesh(tubeGeo, tubeMat);
         tubeMesh.visible = document.getElementById('curve-check').checked;
         curveGroup.add(tubeMesh);
+
+        setMorphTarget(0, true);
 
         document.getElementById('stat-vertices').textContent = vertices.toLocaleString();
         document.getElementById('stat-triangles').textContent = triangles.toLocaleString();
@@ -646,14 +937,18 @@
 
     const opacityInput = document.getElementById('opacity-input');
     opacityInput.addEventListener('input', () => {
-        const o = parseFloat(opacityInput.value);
-        document.getElementById('opacity-value').textContent = o.toFixed(2);
-        surfMat.opacity = o;
-        surfMat.transparent = o < 1;
-        // skip depth writes when translucent so the self-intersecting band
-        // doesn't occlude itself in draw order
-        surfMat.depthWrite = o >= 1;
-        surfMat.needsUpdate = true;
+        currentOpacity = parseFloat(opacityInput.value);
+        document.getElementById('opacity-value').textContent = currentOpacity.toFixed(2);
+        allSurfaceMaterials().forEach(styleSurfaceMaterial);
+    });
+
+    document.querySelectorAll('.texture-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            document.querySelectorAll('.texture-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            currentTexName = btn.dataset.texture;
+            applySurfaceMaterials();
+        });
     });
 
     document.getElementById('wireframe-check').addEventListener('change', e => {
@@ -666,6 +961,16 @@
         if (tubeMesh) tubeMesh.visible = e.target.checked;
     });
 
+    const morphFramesInput = document.getElementById('morph-frames-input');
+    morphFramesInput.addEventListener('input', () => {
+        morphFrames = parseInt(morphFramesInput.value, 10);
+        document.getElementById('morph-frames-value').textContent = morphFrames + ' frames';
+    });
+
+    document.getElementById('morph-btn').addEventListener('click', () => {
+        setMorphTarget(morph.target === 1 ? 0 : 1, false);
+    });
+
     document.getElementById('reset-view-btn').addEventListener('click', () => {
         camera.position.copy(HOME_POS);
         controls.target.copy(HOME_TARGET);
@@ -674,6 +979,22 @@
     document.getElementById('minimize-btn').addEventListener('click', () => {
         document.body.classList.add('ui-collapsed');
     });
+    document.getElementById('panel-handle').addEventListener('click', () => {
+        document.body.classList.toggle('panel-collapsed');
+    });
+
+    // mobile quick-action toolbar
+    function cycleButtons(selector) {
+        const btns = [...document.querySelectorAll(selector)];
+        const i = btns.findIndex(b => b.classList.contains('active'));
+        btns[(i + 1) % btns.length].click();
+    }
+    document.getElementById('mt-morph').addEventListener('click', () => {
+        document.getElementById('morph-btn').click();
+    });
+    document.getElementById('mt-curve').addEventListener('click', () => cycleButtons('.preset-btn'));
+    document.getElementById('mt-draw').addEventListener('click', enterDrawMode);
+    document.getElementById('mt-texture').addEventListener('click', () => cycleButtons('.texture-btn'));
     document.getElementById('ui-toggle').addEventListener('click', () => {
         document.body.classList.remove('ui-collapsed');
     });

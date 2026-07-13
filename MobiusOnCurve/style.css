@@ -88,6 +88,11 @@ body.ui-collapsed #ui-toggle {
     display: block;
 }
 
+#panel-handle,
+#mobile-toolbar {
+    display: none;
+}
+
 .ui-header {
     display: flex;
     align-items: center;
@@ -193,7 +198,12 @@ button {
     gap: 7px;
 }
 
+.texture-grid {
+    grid-template-columns: repeat(3, 1fr);
+}
+
 .preset-btn,
+.texture-btn,
 #reset-view-btn {
     padding: 8px 10px;
     border-radius: 10px;
@@ -206,12 +216,14 @@ button {
 }
 
 .preset-btn:hover,
+.texture-btn:hover,
 #reset-view-btn:hover {
     background: rgba(61, 66, 82, 0.95);
     border-color: rgba(255, 255, 255, 0.25);
 }
 
-.preset-btn.active {
+.preset-btn.active,
+.texture-btn.active {
     border-color: rgba(127, 224, 255, 0.6);
     background: rgba(127, 224, 255, 0.14);
     color: var(--accent);
@@ -374,15 +386,76 @@ input[type="range"] {
 }
 
 @media (max-width: 640px) {
+
+    /* bottom sheet: lower third of the screen, canvas above */
     #ui-container {
-        width: calc(100vw - 32px);
         top: auto;
-        bottom: 16px;
-        max-height: 55vh;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        width: 100%;
+        height: 33.5vh;
+        max-height: none;
+        border-radius: 16px 16px 0 0;
+        border-bottom: none;
+        padding-top: 0;
+        gap: 12px;
+        transition: transform 0.25s ease;
     }
 
+    body.panel-collapsed #ui-container {
+        transform: translateY(calc(100% - 40px));
+    }
+
+    /* pull handle: always visible, sticks to the top while scrolling */
+    #panel-handle {
+        display: flex;
+        position: sticky;
+        top: 0;
+        z-index: 2;
+        align-items: center;
+        justify-content: center;
+        height: 40px;
+        flex-shrink: 0;
+        margin: 0 -18px;
+        background: rgb(28, 31, 42);
+        border-radius: 16px 16px 0 0;
+        cursor: pointer;
+        touch-action: manipulation;
+    }
+
+    #panel-handle .grip {
+        width: 46px;
+        height: 5px;
+        border-radius: 3px;
+        background: rgba(255, 255, 255, 0.35);
+    }
+
+    body.panel-collapsed #panel-handle .grip {
+        background: rgba(127, 224, 255, 0.6);
+    }
+
+    /* the pull handle supersedes the desktop minimize / reopen buttons */
+    #minimize-btn,
     #ui-toggle {
-        top: auto;
-        bottom: 16px;
+        display: none;
+    }
+
+    /* quick-action toolbar, right of the Vibes link */
+    #mobile-toolbar {
+        display: flex;
+        position: fixed;
+        top: 16px;
+        left: 92px;
+        gap: 8px;
+        z-index: 20;
+    }
+
+    #mobile-toolbar .icon-btn {
+        font-size: 1.05rem;
+    }
+
+    body.ui-collapsed #ui-container {
+        display: flex;
     }
 }

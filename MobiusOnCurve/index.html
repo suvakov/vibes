@@ -13,13 +13,23 @@
 </head>
 
 <body>
-    <a href="../index.html" class="back-link">← Back to Vibes</a>
+    <a href="../index.html" class="back-link">← Vibes</a>
+
+    <div id="mobile-toolbar">
+        <button id="mt-morph" class="icon-btn" aria-label="Morph to Möbius strip">🌀</button>
+        <button id="mt-curve" class="icon-btn" aria-label="Next curve">🔁</button>
+        <button id="mt-draw" class="icon-btn" aria-label="Draw curve">✏️</button>
+        <button id="mt-texture" class="icon-btn" aria-label="Next texture">🎨</button>
+    </div>
 
     <div id="canvas-container"></div>
 
     <button id="ui-toggle" class="icon-btn" aria-label="Open Menu">☰</button>
 
     <div id="ui-container">
+        <div id="panel-handle" aria-label="Collapse controls">
+            <span class="grip"></span>
+        </div>
         <div class="ui-header">
             <h1>Möbius on a Curve</h1>
             <div class="header-controls">
@@ -41,6 +51,8 @@
             <div class="preset-grid">
                 <button class="preset-btn active" data-preset="heart">Heart</button>
                 <button class="preset-btn" data-preset="eight">Figure 8</button>
+                <button class="preset-btn" data-preset="trefoil">Trefoil</button>
+                <button class="preset-btn" data-preset="egg">Egg</button>
                 <button class="preset-btn" data-preset="ellipse">Ellipse</button>
                 <button class="preset-btn" data-preset="square">Square</button>
                 <button class="preset-btn" data-preset="triangle">Triangle</button>
@@ -70,11 +82,28 @@
             <input type="range" id="opacity-input" value="1" min="0.05" max="1" step="0.05">
         </div>
 
+        <div class="control-group">
+            <label>Surface texture</label>
+            <div class="preset-grid texture-grid">
+                <button class="texture-btn active" data-texture="plasma">Height</button>
+                <button class="texture-btn" data-texture="stripes">Stripes</button>
+                <button class="texture-btn" data-texture="ants">Ants</button>
+            </div>
+        </div>
+
         <div class="control-group checks">
             <label class="check"><input type="checkbox" id="wireframe-check"> Wireframe</label>
             <label class="check"><input type="checkbox" id="rotate-check" checked> Auto-rotate</label>
             <label class="check"><input type="checkbox" id="curve-check" checked> Show curve</label>
         </div>
+
+        <div class="control-group">
+            <label for="morph-frames-input">Morph speed <span class="value-badge" id="morph-frames-value">110
+                    frames</span></label>
+            <input type="range" id="morph-frames-input" value="110" min="10" max="400" step="10">
+        </div>
+
+        <button id="morph-btn" class="accent-btn">🌀 Morph to Möbius strip</button>
 
         <div class="control-group">
             <button id="reset-view-btn">Reset view</button>
