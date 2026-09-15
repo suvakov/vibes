@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Three-Body Orbits on the Shape Sphere</title>
+    <link rel="stylesheet" href="style.css">
+
+    <!-- Three.js + OrbitControls as global scripts, for file:// compatibility -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+</head>
+
+<body>
+    <a href="../index.html" class="back-link">← Vibes</a>
+
+    <button id="ui-toggle" class="icon-btn" aria-label="Open menu">☰</button>
+
+    <div id="layout">
+        <div id="views">
+            <section class="view" id="view-real">
+                <div class="view-label">Real space <span class="hint">inertial frame, equal masses</span></div>
+                <canvas id="realCanvas"></canvas>
+            </section>
+
+            <section class="view" id="view-sphere">
+                <div class="view-label">Shape sphere <span class="hint">drag to rotate</span></div>
+                <div id="sphereHost"></div>
+            </section>
+
+            <section class="view" id="view-merc">
+                <div class="view-label">Mercator projection <span class="hint">of the shape sphere</span></div>
+                <canvas id="mercCanvas"></canvas>
+            </section>
+        </div>
+
+        <aside id="ui-container">
+            <div class="ui-header">
+                <h1>Three-Body Orbits</h1>
+                <div class="header-controls">
+                    <button id="info-btn" class="icon-btn small" aria-label="Information">i</button>
+                    <button id="minimize-btn" class="icon-btn small" aria-label="Minimize">_</button>
+                </div>
+            </div>
+
+            <div class="subtitle">
+                Newtonian planar three-body orbits with equal masses and zero angular momentum, from
+                Šuvakov &amp; Dmitrašinović,
+                <a href="https://arxiv.org/abs/1303.0181" target="_blank" rel="noopener">“Three classes of Newtonian
+                    three-body planar periodic orbits”</a> (PRL 110, 114301). Each orbit is shown in real space and as a
+                closed curve on the shape sphere, whose topology is a word in the free group ⟨a, b⟩.
+            </div>
+
+            <div class="control-group">
+                <label for="orbit-select">Orbit</label>
+                <select id="orbit-select"></select>
+                <div class="orbit-meta" id="orbit-meta"></div>
+            </div>
+
+            <div class="control-group">
+                <div class="btn-row">
+                    <button id="play-btn" class="accent-btn">⏸ Pause</button>
+                    <button id="restart-btn">↺ Restart</button>
+                </div>
+            </div>
+
+            <div class="control-group">
+                <label for="speed-input">Speed <span class="value-badge" id="speed-value">1.00×</span></label>
+                <input type="range" id="speed-input" value="0" min="-2" max="1.3" step="0.02">
+            </div>
+
+            <div class="control-group">
+                <label for="trail-input">Trail <span class="value-badge" id="trail-value">35%</span></label>
+                <input type="range" id="trail-input" value="0.35" min="0" max="1" step="0.01">
+            </div>
+
+            <div class="control-group">
+                <label for="phase-input">Phase <span class="value-badge" id="phase-value">0.000 T</span></label>
+                <input type="range" id="phase-input" value="0" min="0" max="1" step="0.0001">
+            </div>
+
+            <div class="control-group checks">
+                <label class="check"><input type="checkbox" id="fullpath-check" checked> Full orbit path</label>
+                <label class="check"><input type="checkbox" id="triangle-check" checked> Triangle</label>
+                <label class="check"><input type="checkbox" id="graticule-check" checked> Graticule</label>
+                <label class="check"><input type="checkbox" id="spin-check"> Auto-rotate sphere</label>
+            </div>
+
+            <div class="control-group">
+                <label>Topological word <span class="value-badge" id="word-len">0</span></label>
+                <div id="word-box" class="word-box"></div>
+                <div class="word-legend">
+                    <span><i class="sw a"></i> arc α &nbsp;0 → 2π⁄3</span>
+                    <span><i class="sw b"></i> arc β &nbsp;4π⁄3 → 2π</span>
+                    <span><i class="sw free"></i> free arc (no letter)</span>
+                </div>
+            </div>
+
+            <div class="control-group">
+                <label>Reduction <span class="value-badge" id="reduce-badge">–</span></label>
+                <div id="reduce-box" class="reduce-box"></div>
+            </div>
+
+            <div class="stats">
+                <div class="stat-row"><span>Period T</span><span id="stat-T" class="stat-value">–</span></div>
+                <div class="stat-row"><span>Energy</span><span id="stat-E" class="stat-value">–</span></div>
+                <div class="stat-row"><span>Energy drift</span><span id="stat-dE" class="stat-value">–</span></div>
+                <div class="stat-row"><span>Closure error</span><span id="stat-close" class="stat-value">–</span></div>
+                <div class="stat-row"><span>Syzygies / period</span><span id="stat-syz" class="stat-value">–</span></div>
+                <div class="stat-row"><span>Min pair distance</span><span id="stat-rmin" class="stat-value">–</span>
+                </div>
+                <div class="stat-row"><span>Paper word</span><span id="stat-paper" class="stat-value mono">–</span>
+                </div>
+                <div class="stat-row"><span>Agreement</span><span id="stat-match" class="stat-value">–</span></div>
+            </div>
+        </aside>
+    </div>
+
+    <div id="info-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal">&times;</span>
+            <h2>What am I looking at?</h2>
+            <p>Three equal point masses attract each other by Newtonian gravity in a plane. Almost every initial
+                condition gives chaos, but a discrete set gives <strong>periodic</strong> orbits — the three bodies
+                retrace the same choreography forever. The ones here come from the 2013 catalogue of
+                Šuvakov &amp; Dmitrašinović, which found thirteen new classes beyond the classical figure eight.</p>
+
+            <h3>The shape sphere</h3>
+            <p>Three points in the plane have six degrees of freedom. Throw away the things that do not change the
+                <em>shape</em> of the triangle — where it sits (2), how big it is (1), which way it points (1) — and
+                two degrees of freedom remain. That two-dimensional space is a <strong>sphere</strong>.</p>
+            <p>Concretely, from the Jacobi vectors
+                ρ = (x₁ − x₂)/√2 and λ = (x₁ + x₂ − 2x₃)/√6 one builds a unit vector</p>
+            <p class="eq">n = ( |λ|² − |ρ|² , −2 ρ·λ , 2 ρ∧λ ) / ( |ρ|² + |λ|² )</p>
+            <p>which is automatically of length one. Every triangle is a point of this sphere, and the whole
+                trajectory becomes a closed curve on it.</p>
+
+            <h3>The geography</h3>
+            <ul>
+                <li><strong>Poles</strong> — the two equilateral (Lagrange) triangles, one for each handedness.</li>
+                <li><strong>Equator</strong> — the three bodies are collinear. Such a moment is called a
+                    <strong>syzygy</strong>, and all the topology lives here.</li>
+                <li><strong>Three punctures on the equator</strong> — two-body collisions, at longitudes 0, 2π⁄3 and
+                    4π⁄3. They are removed from the sphere: a trajectory can never reach them.</li>
+            </ul>
+            <p>A sphere with three points removed has fundamental group the <strong>free group on two
+                    generators</strong>, ⟨a, b⟩ — rank two, not three, because a loop around all three punctures
+                slips off over the back of the sphere.</p>
+
+            <h3>Reading the word</h3>
+            <p>Cut the equator at the punctures; it falls into three arcs. Take two of them, α from 0 to 2π⁄3 and
+                β from 4π⁄3 to 2π, as cuts. Their union is a tree joining all three punctures, and cutting the
+                sphere along it leaves a disc — so a loop's homotopy class is decided entirely by
+                <em>which cuts it crosses, and in which direction</em>. Crossings of the third arc happen inside the
+                disc and mean nothing.</p>
+            <p>At each equator crossing, read off the longitude and the direction of travel:</p>
+            <ul>
+                <li>through arc α going <strong>south</strong> → <code>a</code>, going north → <code>A</code></li>
+                <li>through arc β going <strong>south</strong> → <code>b</code>, going north → <code>B</code></li>
+                <li>through the free arc → nothing</li>
+            </ul>
+            <p>Concatenating these letters over one period gives the orbit's <strong>raw</strong> word. Two
+                ambiguities in it are not physical, and removing them gives the <strong>labeled</strong> class — the
+                two lines the <strong>Reduction</strong> panel shows.</p>
+            <ul>
+                <li><strong>Free reduction</strong> — <code>aA</code> and <code>bB</code> are the identity. A
+                    cancelling pair means the curve nicked across a cut and came straight back, which is
+                    homotopically nothing.</li>
+                <li><strong>Cyclic reduction</strong> — free homotopy has no basepoint, so the word is defined only
+                    up to conjugation. Strip matching inverse letters off the two ends and take the least rotation.
+                    This is what makes the answer independent of where along the orbit you started reading.</li>
+            </ul>
+            <p>The panel stops there deliberately, because every further reduction throws away something physical.
+                Taking the primitive root of w<sup>q</sup> discards how many times the orbit went round; quotienting
+                by the six relabellings of the three bodies discards which body is which; quotienting by the mirror
+                discards the handedness. Each is standard for a catalogue label, and each merges orbits that are
+                genuinely different — so none of them is shown as a stage of this orbit's own reduction.</p>
+            <p>They are used in exactly one place: the <em>Agreement</em> line, which checks this orbit against the
+                word as the paper prints it. That comparison has to apply them, because the paper writes several of
+                these words with a different choice of body labels than the convention used here, and prints
+                <em>yarn</em>'s word as an explicit cube.</p>
+            <p>One warning worth repeating: even the labeled class is an invariant, not a complete label. Distinct
+                orbits with different periods and energies can share one. It organises a catalogue; it never
+                certifies that two solutions are the same.</p>
+
+            <h3>The two projections</h3>
+            <p>The <strong>3D sphere</strong> shows the curve as it really is. The <strong>Mercator map</strong>
+                unrolls it so that longitude is horizontal and the equator is a straight line: the three punctures
+                become three vertical lines, the letters become crossings of the coloured segments of the horizontal
+                midline, and the word can be read straight off left to right. Mercator stretches near the poles
+                without bound, so latitude is clipped at ±85° — the dotted borders.</p>
+
+            <h3>Numerics</h3>
+            <p>Integration is an adaptive Dormand–Prince 5(4) scheme at tight tolerance, with the orbit sampled on a
+                uniform time grid over exactly one period. Syzygies are found from sign changes of the signed area
+                (x₂ − x₁) ∧ (x₃ − x₁), which vanishes exactly on the equator, then located by bisection on a cubic
+                Hermite interpolant. The initial conditions were Newton-refined from the published five-digit values,
+                by shooting on the half-period symmetry the whole family shares: every one of these orbits starts in the
+                configuration x₁ = −x₂, x₃ at the midpoint, v₁ = v₂, and returns to that same set at exactly T⁄2.
+                Shooting over the half period rather than the full one halves the error amplification, which is what
+                makes the refinement converge at all.</p>
+            <p>Fourteen of the seventeen orbits then close to around 10⁻¹⁰ and reproduce the published word exactly.
+                Three do not: <strong>butterfly IV</strong> and the two <strong>yin-yang II</strong> orbits pass within
+                about 10⁻³ of a binary collision, and each such passage multiplies any error enormously. Over a full
+                period the amplification exceeds what double precision can absorb, so their initial conditions are not
+                representable at all — the closure error stalls near 10⁻⁵ no matter how the refinement is done or how
+                tight the integration tolerance is set. Those three are shown with a warning: the motion is real, the
+                shape curve is real, but the tail of the word is not the published one. Every panel reports its closure
+                error, so you can see this for yourself rather than take it on trust.</p>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+
+</html>
